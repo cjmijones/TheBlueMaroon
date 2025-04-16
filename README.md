@@ -68,30 +68,42 @@ Build a secure, cloud-native, scalable web application with:
 
 ## 📁 Repository Structure (Example)
 
-/my-app/
-├── frontend/              # React + Tailwind (Vite or Next.js)
-│   ├── public/
-│   └── src/
-│       ├── components/
-│       ├── pages/         # If using Next.js
-│       └── App.jsx        # Entry point (Vite)
-├── backend/               # FastAPI / NestJS
+Project-Directory
+├── backend/                         # FastAPI backend
 │   ├── app/
-│   │   ├── main.py        # FastAPI entrypoint
-│   │   ├── models/
-│   │   ├── routes/
-│   │   └── services/
-│   └── requirements.txt   # For Python deps
-├── docker/                # Docker-related files
-│   ├── Dockerfile.frontend
-│   ├── Dockerfile.backend
-│   └── docker-compose.yml
-├── .github/               # GitHub Actions for CI/CD
-│   └── workflows/
-├── .env.example           # Environment variables template
+│   │   ├── main.py                  # App entrypoint
+│   │   ├── api/                     # All route definitions
+│   │   │   ├── routes_auth.py
+│   │   │   └── routes_posts.py
+│   │   ├── core/                    # App configuration & Auth0 integration
+│   │   │   ├── config.py
+│   │   │   └── auth.py
+│   │   ├── models/                  # Pydantic models & SQLAlchemy schemas
+│   │   ├── db/                      # DB connection logic
+│   │   │   ├── base.py
+│   │   │   └── session.py
+│   │   ├── services/                # Business logic
+│   │   └── utils/                   # Helper functions
+│   ├── tests/
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   └── .env
+├── frontend/                        # React + Vite frontend
+│   ├── public/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── App.tsx
+│   │   ├── main.tsx
+│   │   └── auth/                    # Auth0 wrapper
+│   │       ├── AuthProvider.tsx
+│   │       └── useAuth.ts
+│   ├── Dockerfile
+│   ├── vite.config.ts
+│   └── package.json
+├── docker-compose.yml              # Multi-service dev setup
 ├── README.md
-├── package.json           # If using a monorepo for JS tools
-└── vite.config.js         # Frontend build config (for Vite)
+└── .env.example
 
 ---
 
