@@ -1,0 +1,14 @@
+Category,Service/Tool,Setup Task,Account Needed?,Install Required?,Estimated Time (hrs),Notes
+Frontend,Vite + React + Tailwind,Initialize frontend project with Vite and TailwindCSS,No,Yes,1.0,"Run `npm create vite@latest`, install Tailwind"
+Frontend,Vercel,Create Vercel account and connect GitHub repo for frontend,Yes,No,0.5,https://vercel.com/
+Backend,FastAPI,Initialize FastAPI project with virtual environment,No,Yes,1.0,Install FastAPI + uvicorn in a virtualenv
+Backend,Render,Create Render account and set up backend deploy pipeline,Yes,No,0.5,https://render.com/
+Database,PostgreSQL (Render/Supabase),Provision managed Postgres instance,Yes,No,0.5,Can use Supabase or Render DB
+Database,Prisma or SQLAlchemy,Install ORM and connect to DB,No,Yes,0.5,Depends on Python or Node backend
+Authentication,Auth0,Create Auth0 account and set up OAuth app,Yes,No,1.0,https://auth0.com/
+Authentication,Auth0 SDK,Install and configure SDK in frontend and backend,No,Yes,1.0,Depends on frontend/backend stack
+Security,Cloudflare,Create Cloudflare account and set up DNS + DDoS protection,Yes,No,1.0,https://cloudflare.com/
+Security,Rate limiting middleware,Install and configure rate limiting in backend,No,Yes,0.5,"e.g., `slowapi` for FastAPI or `express-rate-limit`"
+Infrastructure,Docker,Set up Docker for backend service,No,Yes,1.0,Write Dockerfile + docker-compose for local dev
+Infrastructure,GitHub,Initialize GitHub repo and connect CI/CD pipelines,Yes,No,0.5,Link to Vercel or Render
+Monitoring,Sentry,Create Sentry account and connect frontend + backend,Yes,Yes,1.0,https://sentry.io/
