@@ -1,4 +1,4 @@
-backend/.env
+backend/.env_copy
 frontend/.env
 backend/venv/
 backend/app/__pycache__/
