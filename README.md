@@ -141,6 +141,21 @@ Project-Directory
 
 This document tracks the structure, contents, and development progress of each key file in the project. For every file, we document its purpose, key functions and classes, import dependencies, external services, known bugs, and future steps.
 
+## Project TODO (Backend + Frontend)
+
+| Priority | Area      | Task                                                                 | Status           |
+|----------|-----------|----------------------------------------------------------------------|------------------|
+| 🔥 High   | Backend   | Add unit tests for `verify_jwt` and route auth flows                 | ⬜ Not started |
+| 🔥 High   | Frontend  | Add fallback for missing Auth0 env variables in `main.tsx`           | ⬜ Not started |
+| 🔄 Medium | Backend   | Integrate Alembic with `asyncpg` and test SSL handling               | ⬜ Not started |
+| 🔄 Medium | Frontend  | Improve loading UX in `ProtectedRoute` and `Dashboard`               | ⬜ Not started |
+| 🔄 Medium | Backend   | Replace `Base.metadata.create_all()` with Alembic migrations         | ⬜ Not started |
+| ✅ Low    | Frontend  | Implement dark-themed login with Toolpad + MUI                       | ✅ Complete    |
+| 🔄 Medium | Backend   | Add error logging for failed JWT decode attempts                     | ⬜ Not started |
+| 🔄 Medium | Frontend  | Expand dashboard with additional user or app-specific data           | ⬜ Not started |
+| 🧪 Low    | Frontend  | Add support for multiple login providers in `Login.tsx`              | ⬜ Not started |
+| 🧪 Low    | Backend   | Add a `/status` route to include DB and Auth0 connectivity checks    | ⬜ Not started |
+
 ---
 
 ## Backend

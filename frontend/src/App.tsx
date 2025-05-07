@@ -1,3 +1,4 @@
+import { JSX } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import OAuthSignInPage from './components/Login';
 import Dashboard from './components/Dashboard';

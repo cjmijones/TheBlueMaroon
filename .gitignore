@@ -4,3 +4,5 @@ frontend/.env
 backend/venv/
 backend/app/__pycache__/
 */__pycache__
+quarto_website
+__pycache__
