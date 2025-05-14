@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: blue-maroon-fastapi
+    static_configs:
+      - targets: [ "fastapi:8000" ]   # container name from compose

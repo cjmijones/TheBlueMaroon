@@ -11,5 +11,6 @@ async def get_user_info(user: User = Depends(get_current_user)):
         "user_id": user.id,
         "email": user.email,
         "name": user.name,
+        "created_at": user.created_at,
         "last_login": user.last_login,
     }

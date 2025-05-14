@@ -11,11 +11,13 @@ from datetime import datetime
 
 from app.db.session import get_db
 from app.models.user import User
-import os
+from app.core.config import get_settings
 
-AUTH0_DOMAIN     = os.getenv("AUTH0_DOMAIN")
-AUTH0_AUDIENCE   = os.getenv("AUTH0_AUDIENCE")
-AUTH0_ALGORITHMS = os.getenv("AUTH0_ALGORITHMS", "RS256").split(",")
+settings = get_settings()
+
+AUTH0_DOMAIN = settings.auth0_domain
+AUTH0_AUDIENCE = settings.auth0_audience
+AUTH0_ALGORITHMS = settings.algorithms
 
 bearer_scheme = HTTPBearer()
 
@@ -59,9 +61,10 @@ async def get_current_user(
                             detail="Invalid or expired token") from exc
 
     sub      = payload["sub"]                     # Auth0 user id
-    email    = payload.get("email")
-    name     = payload.get("name")
-    picture  = payload.get("picture")
+    email    = payload.get("https://api.thebluemaroon.local/email")
+    name     = payload.get("https://api.thebluemaroon.local/name")
+    picture  = payload.get("https://api.thebluemaroon.local/picture")
+    created_at  = payload.get("https://api.thebluemaroon.local/created_at")
     now      = datetime.utcnow()
 
     # ➊ try to fetch
@@ -85,10 +88,38 @@ async def get_current_user(
             id=sub,
             email=email,
             name=name,
-            picture=picture,
+            picture=picture,    
             created_at=now,
             last_login=now,
         )
     )
     await db.commit()
     return (await db.execute(select(User).where(User.id == sub))).scalar_one()
+
+
+async def exchange_refresh_token(refresh_token: str) -> dict:
+    """
+    Exchange a refresh token for a new access token via Auth0.
+    """
+
+    token_url = f"https://{settings.auth0_domain}/oauth/token"
+    data = {
+        "grant_type": "refresh_token",
+        "client_id": settings.auth0_client_id,
+        "client_secret": settings.auth0_client_secret,
+        "refresh_token": refresh_token,
+    }
+
+    print("🔧 token‑url →", settings.auth0_token_url)
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(token_url, data=data)
+
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+        ) from e
+
+    return response.json()

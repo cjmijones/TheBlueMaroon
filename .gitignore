@@ -6,3 +6,6 @@ backend/app/__pycache__/
 */__pycache__
 quarto_website
 __pycache__
+backend/ops/.env
+oidc_login_xyz_creds.txt
+oidc_login_xyz_creds.png

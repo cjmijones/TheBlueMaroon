@@ -16,7 +16,9 @@ engine = create_async_engine(
     echo=True,
     connect_args={"ssl": ssl_ctx},
     pool_pre_ping=True,       # 💡 verifies connection is alive before each use
-    pool_recycle=1800         # 💡 recycles connection every 30 minutes (Neon safe)
+    pool_recycle=1800,         # 💡 recycles connection every 30 minutes (Neon safe)
+    pool_size=5, 
+    max_overflow=0
 )
 
 AsyncSessionLocal = sessionmaker(

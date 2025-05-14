@@ -15,7 +15,10 @@ createRoot(document.getElementById('root')!).render(
       authorizationParams={{
         redirect_uri: window.location.origin,
         audience,
+        scope: 'openid profile email offline_access',  // ✅ request refresh token
       }}
+      useRefreshTokens={true}                          // ✅ enable rotation
+      cacheLocation="localstorage"                     // optional: persist across tabs
     >
       <App />
     </Auth0Provider>  
