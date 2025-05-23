@@ -5,7 +5,12 @@ import axios from "axios";
 
 export default function Dashboard() {
   const { logout, getAccessTokenSilently } = useAuth0();
+  
+  // This hook is where the /me route is called using the auth token;
+  // This is what populates the FastApi logs with the 🔐 JWT payload: 
   const profile = useUserProfile();
+
+
   const [showUserInfo, setShowUserInfo] = useState(false);
   const [editingUsername, setEditingUsername] = useState(false);
   const [newUsername, setNewUsername] = useState("");

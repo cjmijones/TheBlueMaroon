@@ -17,13 +17,14 @@ setup_logging()
 # Setup Prometheus
 instrumentator = Instrumentator()
 
-# Create FastAPI app with lifespan
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Expose /metrics route here (route-level, safe post-startup)
     instrumentator.expose(app)
     yield
 
+# Create FastAPI app with lifespan
 app = FastAPI(title="Blue‑Maroon API", lifespan=lifespan)
 
 # Instrument app BEFORE startup

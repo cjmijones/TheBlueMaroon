@@ -9,3 +9,26 @@ __pycache__
 backend/ops/.env
 oidc_login_xyz_creds.txt
 oidc_login_xyz_creds.png
+.env
+# ✅ Node modules and build artifacts
+node_modules/
+artifacts/
+cache/
+coverage/
+typechain/
+.env
+scripts/.env
+
+# ✅ IDE/editor-specific junk
+.vscode/
+.idea/
+*.log
+*.tsbuildinfo
+
+# ✅ OS-specific files
+.DS_Store
+Thumbs.db
+
+# ✅ Hardhat-specific config outputs
+deployments/
+broadcast/
