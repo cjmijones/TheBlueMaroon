@@ -23,7 +23,7 @@ export function useUserProfile(): UserProfile | null {
 
         console.log("🔐User getAccessTokenSilently in User Profile Hook Call", jwtDecode(token));
 
-        const response = await axios.get(`${import.meta.env.VITE_API_DEV_URL}/me`, {
+        const response = await axios.get(`${import.meta.env.VITE_API_DEV_URL}/api/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 

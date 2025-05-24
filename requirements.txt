@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+asyncpg
+alembic
+psycopg
+psycopg2-binary
+
+python-dotenv
+python-jose
+requests
+httpx
+
+pydantic-settings
+
+prometheus-fastapi-instrumentator

@@ -2,7 +2,7 @@ auth_enabled: false
 
 server:
   http_listen_port: 3100
-  grpc_listen_port: 9095
+  log_level: info
 
 ingester:
   wal:
@@ -13,31 +13,32 @@ ingester:
       kvstore:
         store: inmemory
       replication_factor: 1
-  chunk_idle_period: 3m
-  max_chunk_age: 1h
-  chunk_retain_period: 30s
 
 schema_config:
   configs:
     - from: 2023-01-01
-      store: boltdb-shipper        # <— still use boltdb‑shipper
-      object_store: filesystem     # <— but shared store defined below
-      schema: v11
+      store: tsdb
+      object_store: filesystem
+      schema: v13
       index:
+        period: 24h          # ✅ required for TSDB
         prefix: index_
-        period: 24h
+      row_shards: 16
 
 storage_config:
-  boltdb_shipper:
+  tsdb_shipper:
     active_index_directory: /loki/index
-    cache_location: /loki/boltdb-cache
+    cache_location: /loki/cache
   filesystem:
-    directory: /loki/chunks        # <— where chunks go
+    directory: /loki/chunks
 
 compactor:
   working_directory: /loki/compactor
-  shared_store: filesystem         # <— NEW position for “shared_store”
+  compaction_interval: 10m
+  retention_enabled: true
+  delete_request_store: filesystem   # ✅ required when retention is enabled
 
 limits_config:
   reject_old_samples: true
   reject_old_samples_max_age: 168h
+  retention_period: 168h            # 7 days

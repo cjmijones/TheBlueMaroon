@@ -1,48 +1,72 @@
-version: "3.12.3"
-
 services:
-  fastapi:
-    build: ../
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
-    volumes:
-      - ..:/code              # mounts your code for live reload (optional)
+  # ────────────────────────────────
+  # 1) FastAPI + React (single image)
+  # ────────────────────────────────
+  app:
+    build:
+      context: ../../              # repo root: contains Dockerfile, backend/, frontend/
+      dockerfile: Dockerfile
+    env_file:
+      - ../.env                 # DB_URL, AUTH0 keys, etc.
     ports:
       - "8000:8000"
+    depends_on:
+      - postgres
 
-  prometheus:
-    image: prom/prometheus:latest
+  # ──────────────
+  # 2) Postgres DB
+  # ──────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      POSTGRES_DB: "${POSTGRES_DB:-bluemaroon}"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - pgdata:/var/lib/postgresql/data
+
+  # ───────────────────
+  # 3) Observability
+  # ───────────────────
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    volumes:
+      - ../prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
       - "9090:9090"
 
   grafana:
-    image: grafana/grafana:latest 
-    environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+    image: grafana/grafana:11.0.0
     ports:
       - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: "${GRAFANA_USER:-admin}"
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_PASSWORD:-admin}"
     volumes:
       - grafana-data:/var/lib/grafana
 
   loki:
-    image: grafana/loki:2.9.3
+    image: grafana/loki:3.0.0
     command: -config.file=/etc/loki/local-config.yaml
     ports:
       - "3100:3100"
     volumes:
-      - ./loki-config.yaml:/etc/loki/local-config.yaml
-      - loki-data:/loki              # <— persistent storage
+      - ../loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
 
   promtail:
-    image: grafana/promtail:2.9.3
+    image: grafana/promtail:3.0.0
     command: -config.file=/etc/promtail/promtail-config.yaml
     volumes:
-      - ./promtail-config.yaml:/etc/promtail/promtail-config.yaml
-      - /var/log:/var/log            # host logs (optional)
-      - /etc/machine-id:/etc/machine-id
+      - ../promtail-config.yaml:/etc/promtail/promtail-config.yaml:ro
+      - /var/log:/var/log                       # optional: host logs
+      - /etc/machine-id:/etc/machine-id:ro
+
+networks:
+  default:
+    name: blue-maroon-net
 
 volumes:
+  pgdata:
   grafana-data:
   loki-data:
