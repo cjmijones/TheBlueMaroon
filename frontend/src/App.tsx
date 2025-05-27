@@ -1,51 +1,70 @@
-import { JSX } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { useAuth0 } from "@auth0/auth0-react";
-
-import OAuthSignInPage from "./components/Login";
-import Dashboard from "./components/Dashboard";
-import { WalletProvider } from "./providers/WalletProvider";   // ⬅️ import
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { WalletProvider } from "./providers/WalletProvider";
 import { ScrollToTop } from "./components/common/ScrollToTop";
-import AppLayout from "./layout/AppLayout";
-import Home from "./pages/Dashboard/Home";
 
-function ProtectedRoute({ children }: { children: JSX.Element }) {
-  const { isAuthenticated, isLoading } = useAuth0();
-  if (isLoading) return <p>Loading...</p>;
-  if (!isAuthenticated) return <Navigate to="/" replace />;
-  return children;
-}
+import PrivateAppLayout from "./layout/PrivateAppLayout";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import Home from "./pages/Dashboard/Home";
+import Blank from "./pages/Blank";
+import OAuthSignInPage from "./components/Login";
+import Testboard from "./components/Testboard";
+import NotFound from "./pages/OtherPage/NotFound";
+import Alerts from "./pages/UiElements/Alerts";
+import Avatars from "./pages/UiElements/Avatars";
+import Badges from "./pages/UiElements/Badges";
+import Buttons from "./pages/UiElements/Buttons";
+import Images from "./pages/UiElements/Images";
+import Videos from "./pages/UiElements/Videos";
+import LineChart from "./pages/Charts/LineChart";
+import BarChart from "./pages/Charts/BarChart";
+import UserProfiles from "./components/UserProfiles";
 
 export default function App() {
   return (
-    <WalletProvider>                {/* ⬅️ wrap *once* at the top */}
+    <WalletProvider>
       <Router>
         <ScrollToTop />
-        <Routes>
 
-          {/* Login Page */}
+        <Routes>
+          {/* Public route */}
           <Route path="/" element={<OAuthSignInPage />} />
 
-          {/* Dashboard Page */}
+          {/* Test Protected Route outside of Private App Layout - may be deprecated */}
           <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route element={<AppLayout />}>
-            <Route
-              path="/testing"
+              path="/testboard"
               element={
                 <ProtectedRoute>
-                  <Home />
+                  <Testboard />
                 </ProtectedRoute>
               }
             />
+
+          {/* Protected branch – EVERYTHING nested under here requires auth */}
+          <Route element={<PrivateAppLayout />}>
+
+            {/* Dashboard shell */}
+            <Route path="/dashboard" element={<Home />} />
+
+            {/* Ui Elements */}
+            <Route path="/alerts" element={<Alerts />} />
+            <Route path="/avatars" element={<Avatars />} />
+            <Route path="/badge" element={<Badges />} />
+            <Route path="/buttons" element={<Buttons />} />
+            <Route path="/images" element={<Images />} />
+            <Route path="/videos" element={<Videos />} />
+
+            {/* Charts */}
+            <Route path="/line-chart" element={<LineChart />} />
+            <Route path="/bar-chart" element={<BarChart />} />            
+
+            {/* Other private pages */}
+            <Route path="/blank" element={<Blank />} />
+            <Route path="/profile" element={<UserProfiles />} />
+
           </Route>
+
+          {/* Fallback Route */}
+          <Route path="*" element={<NotFound />} />
 
         </Routes>
       </Router>

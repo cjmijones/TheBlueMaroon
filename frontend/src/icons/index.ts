@@ -1,3 +1,4 @@
+// From Tailwind Admin Free Download
 import { ReactComponent as PlusIcon } from "./plus.svg?react";
 import { ReactComponent as CloseIcon } from "./close.svg?react";
 import { ReactComponent as BoxIcon } from "./box.svg?react";
@@ -53,7 +54,11 @@ import { ReactComponent as MoreDotIcon } from "./moredot.svg?react";
 import { ReactComponent as AlertHexaIcon } from "./alert-hexa.svg?react";
 import { ReactComponent as ErrorHexaIcon } from "./info-hexa.svg?react";
 
+// Custom made svgs
+import { ReactComponent as DefaultUserIcon } from "./default_user.svg?react";
+
 export {
+  // Default Tailwind Admin Icons
   ErrorHexaIcon,
   AlertHexaIcon,
   MoreDotIcon,
@@ -108,4 +113,8 @@ export {
   HorizontaLDots,
   ChevronUpIcon,
   ChatIcon,
+
+  // Manual Icons for Export
+  DefaultUserIcon,
+
 };

@@ -17,7 +17,7 @@ config = context.config
 fileConfig(config.config_file_name)
 
 # Your model metadata
-from app.models.user import Base, User  # ⬅️ import your Base here
+from app.models import Base  # ⬅️ import your Base here
 # Base = declarative_base()
 
 target_metadata = Base.metadata

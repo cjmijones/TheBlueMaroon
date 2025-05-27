@@ -1,0 +1,155 @@
+---
+title: "Database ER Diagram"
+format: html
+---
+
+erDiagram
+    users ||--o{ wallets : owns
+    users ||--o{ social_links : ""
+    users ||--o{ addresses : ""
+    users ||--o{ notifications : ""
+    users ||--o{ audit_events : ""
+    users ||--o{ user_roles : ""
+    roles ||--o{ user_roles : ""
+    wallets ||--o{ transactions : ""
+    wallets ||--o{ user_nfts : ""
+    wallets ||--o{ listings : ""
+    wallets ||--o{ orders : ""
+    nfts ||--o{ user_nfts : ""
+    listings ||--o{ orders : ""
+    transactions ||--|{ orders : ""
+
+    users {
+        string id PK
+        string email
+        string name
+        string picture
+        datetime created_at
+        datetime last_login
+    }
+    wallets {
+        string address PK
+        string user_id FK
+        int    chain_id
+        string ens_name
+        boolean is_primary
+        datetime linked_at
+    }
+    social_links {
+        int id PK
+        string user_id FK
+        string platform
+        string url
+    }
+    addresses {
+        int id PK
+        string user_id FK
+        string country
+        string state
+        string city
+        string postal_code
+        string tax_id
+        string label
+    }
+    roles {
+        int id PK
+        string slug
+        string description
+    }
+    user_roles {
+        string user_id FK
+        int role_id FK
+    }
+    transactions {
+        string hash PK
+        string wallet_address FK
+        int chain_id
+        string method
+        json payload_json
+        string status
+        datetime created_at
+    }
+    nfts {
+        string token_id PK
+        string contract
+        int chain_id
+        string metadata_uri
+    }
+    user_nfts {
+        string wallet_address FK
+        string token_id FK
+        datetime acquired_at
+    }
+    listings {
+        int id PK
+        string seller_wallet_address FK
+        string title
+        string description
+        numeric price_wei
+        string status
+        datetime created_at
+    }
+    orders {
+        int id PK
+        string buyer_wallet_address FK
+        int listing_id FK
+        numeric amount_wei
+        string status
+        string tx_hash FK
+        datetime created_at
+    }
+    notifications {
+        int id PK
+        string user_id FK
+        string type
+        json payload
+        datetime read_at
+        datetime created_at
+    }
+    audit_events {
+        int id PK
+        string user_id FK
+        string action
+        json metadata
+        datetime created_at
+    }
+
+```{python}
+{
+  "tables": [
+    { "name": "users", "pk": ["id"], "columns": ["id","email","name","picture","created_at","last_login"] },
+    { "name": "wallets", "pk": ["address"], "columns": ["address","user_id","chain_id","ens_name","is_primary","linked_at"],
+      "fk": [{ "column": "user_id", "ref": "users.id"}] },
+    { "name": "social_links", "pk": ["id"], "columns": ["id","user_id","platform","url"],
+      "fk": [{ "column": "user_id", "ref": "users.id"}] },
+    { "name": "addresses", "pk": ["id"], "columns": ["id","user_id","country","state","city","postal_code","tax_id","label"],
+      "fk": [{ "column": "user_id", "ref": "users.id"}] },
+    { "name": "roles", "pk": ["id"], "columns": ["id","slug","description"] },
+    { "name": "user_roles", "pk": ["user_id","role_id"],
+      "fk": [{ "column": "user_id", "ref": "users.id"}, { "column": "role_id", "ref": "roles.id"}] },
+    { "name": "transactions", "pk": ["hash"],
+      "columns": ["hash","wallet_address","chain_id","method","payload_json","status","created_at"],
+      "fk": [{ "column": "wallet_address", "ref": "wallets.address"}] },
+    { "name": "nfts", "pk": ["token_id"],
+      "columns": ["token_id","contract","chain_id","metadata_uri"] },
+    { "name": "user_nfts", "pk": ["wallet_address","token_id"],
+      "fk": [{ "column": "wallet_address", "ref": "wallets.address"}, { "column": "token_id", "ref": "nfts.token_id"}] },
+    { "name": "listings", "pk": ["id"],
+      "columns": ["id","seller_wallet_address","title","description","price_wei","status","created_at"],
+      "fk": [{ "column": "seller_wallet_address", "ref": "wallets.address"}] },
+    { "name": "orders", "pk": ["id"],
+      "columns": ["id","buyer_wallet_address","listing_id","amount_wei","status","tx_hash","created_at"],
+      "fk": [
+        { "column": "buyer_wallet_address", "ref": "wallets.address" },
+        { "column": "listing_id", "ref": "listings.id" },
+        { "column": "tx_hash", "ref": "transactions.hash" }
+      ] },
+    { "name": "notifications", "pk": ["id"],
+      "columns": ["id","user_id","type","payload","read_at","created_at"],
+      "fk": [{ "column": "user_id", "ref": "users.id"}] },
+    { "name": "audit_events", "pk": ["id"],
+      "columns": ["id","user_id","action","metadata","created_at"],
+      "fk": [{ "column": "user_id", "ref": "users.id"}] }
+  ]
+}
+```

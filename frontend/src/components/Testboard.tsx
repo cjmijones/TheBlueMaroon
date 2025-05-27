@@ -3,7 +3,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { useUserProfile } from "../hooks/userProfile.tsx";
 import axios from "axios";
 
-export default function Dashboard() {
+export default function Testboard() {
   const { logout, getAccessTokenSilently } = useAuth0();
   
   // This hook is where the /me route is called using the auth token;
@@ -25,7 +25,7 @@ export default function Dashboard() {
     try {
       const token = await getAccessTokenSilently();
       await axios.post(
-        `${import.meta.env.VITE_API_DEV_URL}/me/update-username`,
+        `${import.meta.env.VITE_API_DEV_URL}/api/me/update-username`,
         { username: newUsername },
         {
           headers: {
@@ -57,7 +57,7 @@ export default function Dashboard() {
         fontFamily: "Arial, sans-serif",
       }}
     >
-      <h1>Welcome to the Dashboard</h1>
+      <h1>Welcome to the Testboard</h1>
 
       <button
         onClick={toggleUserInfo}

@@ -33,6 +33,6 @@ createRoot(document.getElementById('root')!).render(
           <App />
         </AppWrapper>
       </Auth0Provider>
-    </ThemeProvider>
+    </ThemeProvider>,
   </StrictMode>,
 )
