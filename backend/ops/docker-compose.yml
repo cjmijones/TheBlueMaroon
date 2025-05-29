@@ -12,6 +12,7 @@ services:
       - "8000:8000"
     depends_on:
       - postgres
+      - redis
 
   # ──────────────
   # 2) Postgres DB
@@ -25,8 +26,20 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  # ───────────────
+  # 3) Redis (for nonce caching)
+  # ───────────────
+  redis:
+    image: redis:7-alpine
+    container_name: blue-maroon-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
   # ───────────────────
-  # 3) Observability
+  # 4) Observability
   # ───────────────────
   prometheus:
     image: prom/prometheus:v2.52.0
@@ -70,3 +83,4 @@ volumes:
   pgdata:
   grafana-data:
   loki-data:
+  redis-data: 

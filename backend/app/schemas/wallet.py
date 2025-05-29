@@ -11,10 +11,18 @@ EthAddress = Annotated[
 
 class WalletCreate(BaseModel):
     address: EthAddress
-    signature: str       # SIWE signature for link request
-    message: str         # original SIWE message
+    signature: str
+    message: str
+    nonce: str
+    chain_id: int
+    ens_name: str | None = None
 
 class WalletRead(BaseModel):
-    address: EthAddress
-    created_at: datetime
+    address: str
+    chain_id: int
+    ens_name: str | None = None
     is_primary: bool
+    linked_at: datetime  # ✅ Matches SQLAlchemy field
+
+    class Config:
+        orm_mode = True

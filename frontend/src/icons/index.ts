@@ -55,7 +55,11 @@ import { ReactComponent as AlertHexaIcon } from "./alert-hexa.svg?react";
 import { ReactComponent as ErrorHexaIcon } from "./info-hexa.svg?react";
 
 // Custom made svgs
-import { ReactComponent as DefaultUserIcon } from "./default_user.svg?react";
+import { ReactComponent as LogoDarkIcon } from "./logo-dark.svg?react";
+import { ReactComponent as LogoSkylineIcon} from "./logo-icon.svg?react";
+import { ReactComponent as LogoFullIcon } from "./Full_TBM_Logo.svg?react"
+import { ReactComponent as DefaultUserIcon } from "./DefaultUser.svg?react"
+
 
 export {
   // Default Tailwind Admin Icons
@@ -116,5 +120,8 @@ export {
 
   // Manual Icons for Export
   DefaultUserIcon,
+  LogoDarkIcon,
+  LogoSkylineIcon,
+  LogoFullIcon,
 
 };

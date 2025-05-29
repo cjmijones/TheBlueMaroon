@@ -16,3 +16,4 @@ pydantic-settings
 prometheus-fastapi-instrumentator
 
 siwe
+redis==6.1.0

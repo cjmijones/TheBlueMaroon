@@ -5,6 +5,8 @@ import { Link } from "react-router";
 
 import { useUserProfile } from "../../hooks/userProfile.tsx";
 
+import { DefaultUserIcon } from "../../icons"; 
+
 export default function UserDropdown() {
   const profile = useUserProfile();
   
@@ -23,8 +25,17 @@ export default function UserDropdown() {
         onClick={toggleDropdown}
         className="flex items-center text-gray-700 dropdown-toggle dark:text-gray-400"
       >
-        <span className="mr-3 overflow-hidden rounded-full h-11 w-11">
-          <img src="/images/user/default_user.jpg" alt="User" />
+        <span className="mr-3 overflow-hidden rounded-full h-11 w-11 bg-gray-100 dark:bg-gray-800">
+          {/* {profile?.picture ? (
+            <img
+              src={profile.picture}
+              alt="User"
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <DefaultUserIcon className="h-full w-full object-cover p-1" />
+          )} */}
+          <DefaultUserIcon className="h-full w-full object-cover p-1" />
         </span>
 
 

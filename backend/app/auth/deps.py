@@ -13,6 +13,9 @@ from app.db.session import get_db
 from app.models.user import User
 from app.core.config import get_settings
 
+import os
+from redis.asyncio import Redis
+
 settings = get_settings()
 
 AUTH0_DOMAIN = settings.auth0_domain
@@ -123,3 +126,7 @@ async def exchange_refresh_token(refresh_token: str) -> dict:
         ) from e
 
     return response.json()
+
+
+def get_redis() -> Redis:
+    return Redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"))

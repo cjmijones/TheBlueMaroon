@@ -4,20 +4,20 @@ format: html
 ---
 
 erDiagram
-    users ||--o{ wallets : owns
-    users ||--o{ social_links : ""
-    users ||--o{ addresses : ""
-    users ||--o{ notifications : ""
-    users ||--o{ audit_events : ""
-    users ||--o{ user_roles : ""
-    roles ||--o{ user_roles : ""
-    wallets ||--o{ transactions : ""
-    wallets ||--o{ user_nfts : ""
-    wallets ||--o{ listings : ""
-    wallets ||--o{ orders : ""
-    nfts ||--o{ user_nfts : ""
-    listings ||--o{ orders : ""
-    transactions ||--|{ orders : ""
+    users ||--o{ wallets : owns }
+    users ||--o{ social_links : "" }
+    users ||--o{ addresses : "" }
+    users ||--o{ notifications : "" }
+    users ||--o{ audit_events : "" }
+    users ||--o{ user_roles : "" }
+    roles ||--o{ user_roles : "" }
+    wallets ||--o{ transactions : "" }
+    wallets ||--o{ user_nfts : "" }
+    wallets ||--o{ listings : "" }
+    wallets ||--o{ orders : "" }
+    nfts ||--o{ user_nfts : "" }
+    listings ||--o{ orders : "" }
+    transactions ||--|{ orders : "" }
 
     users {
         string id PK
@@ -110,7 +110,7 @@ erDiagram
         int id PK
         string user_id FK
         string action
-        json metadata
+        json audit_event_metadata
         datetime created_at
     }
 
@@ -148,7 +148,7 @@ erDiagram
       "columns": ["id","user_id","type","payload","read_at","created_at"],
       "fk": [{ "column": "user_id", "ref": "users.id"}] },
     { "name": "audit_events", "pk": ["id"],
-      "columns": ["id","user_id","action","metadata","created_at"],
+      "columns": ["id","user_id","action","audit_event_metadata","created_at"],
       "fk": [{ "column": "user_id", "ref": "users.id"}] }
   ]
 }
