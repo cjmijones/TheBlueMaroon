@@ -2,6 +2,10 @@ import GridShape from "../../components/common/GridShape";
 import { Link } from "react-router";
 import PageMeta from "../../components/common/PageMeta";
 
+import { 
+  NotFound404LightIcon,  
+  NotFound404DarkIcon } from "../../icons";
+
 export default function NotFound() {
   return (
     <>
@@ -16,12 +20,13 @@ export default function NotFound() {
             ERROR
           </h1>
 
-          <img src="/images/error/404.svg" alt="404" className="dark:hidden" />
-          <img
-            src="/images/error/404-dark.svg"
-            alt="404"
-            className="hidden dark:block"
-          />
+          {/* Conditionally render light/dark SVG */}
+          <div className="dark:hidden">
+            <NotFound404LightIcon className="mx-auto w-full h-auto" />
+          </div>
+          <div className="hidden dark:block">
+            <NotFound404DarkIcon className="mx-auto w-full h-auto" />
+          </div>
 
           <p className="mt-10 mb-6 text-base text-gray-700 dark:text-gray-400 sm:text-lg">
             We can’t seem to find the page you are looking for!

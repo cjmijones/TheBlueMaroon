@@ -34,7 +34,7 @@ export function useUserProfile(): UserProfile | null {
     };
 
     fetchProfile();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, getAccessTokenSilently]);
 
   return profile;
 }

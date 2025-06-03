@@ -38,8 +38,8 @@ export default function Testboard() {
       setEditingUsername(false);
       setNewUsername("");
       window.location.reload(); // reload to re-trigger useUserProfile
-    } catch (err: any) {
-      if (err.response?.data?.detail === "Username already taken") {
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.data?.detail === "Username already taken") {
         setError("❌ That username is already taken.");
       } else {
         setError("⚠️ Failed to update username.");

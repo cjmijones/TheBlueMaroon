@@ -4,7 +4,7 @@ from functools import lru_cache
 from typing import List, Optional
 
 class Settings(BaseSettings):
-    app_name: str = "The Blue Maroon"
+    app_name: str = "The_Blue_Maroon"
     env_type: str = "dev"
     version: str = "0.1.0"
     debug: bool = False
@@ -16,10 +16,20 @@ class Settings(BaseSettings):
     auth0_audience: str
     auth0_client_id: str
     auth0_client_secret: str
+    auth0_m2m_client_id: str
+    auth0_m2m_client_secret: str
     auth0_token_url: str = ""
     algorithms: List[str] = ["RS256"]
     auth0_siwe_connection: str = "siwe"
     auth0_allowed_chains: List[int]
+
+    # Didit 
+    didit_client_id: str
+    didit_client_secret: str
+    didit_api_key: str
+    didit_webhook_secret: str
+    didit_token_base_url: str
+    didit_verify_base_url: str
 
     # DB
     database_url: Optional[str] = None

@@ -13,6 +13,7 @@ from app.api.routes_token import router as token_router
 from app.api.routes_test_tokens import router as test_token_router
 from app.api.routes_username import router as user_router
 from app.api.routes_wallets import router as wallet_router
+from app.api.routes_kyc import router as kyc_router
 
 from app.core.config import get_settings
 from app.core.logging_config import setup_logging
@@ -53,6 +54,8 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "http://0.0.0.0:8000/",
         "http://localhost:8000",   # container / prod
+        "https://fair-forcibly-kodiak.ngrok-free.app",
+        "https://fair-forcibly-kodiak.ngrok-free.app/",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -69,6 +72,7 @@ api_router.include_router(token_router)
 api_router.include_router(health_router)
 api_router.include_router(user_router)
 api_router.include_router(wallet_router)
+api_router.include_router(kyc_router)
 
 if settings.env_type == "dev":
     api_router.include_router(test_token_router)

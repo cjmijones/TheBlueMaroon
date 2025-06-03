@@ -60,6 +60,15 @@ import { ReactComponent as LogoSkylineIcon} from "./logo-icon.svg?react";
 import { ReactComponent as LogoFullIcon } from "./Full_TBM_Logo.svg?react"
 import { ReactComponent as DefaultUserIcon } from "./DefaultUser.svg?react"
 
+// Error related svgs
+import { ReactComponent as NotFound404LightIcon } from "./404.svg?react";
+import { ReactComponent as NotFound404DarkIcon } from "./404-dark.svg?react";
+import { ReactComponent as Error500LightIcon } from "./500.svg?react";
+import { ReactComponent as Error500DarkIcon } from "./500-dark.svg?react";
+import { ReactComponent as Error503LightIcon } from "./503.svg?react";
+import { ReactComponent as Error503DarkIcon } from "./503-dark.svg?react";
+import { ReactComponent as GridIcon01 } from "./grid-01.svg?react";
+
 
 export {
   // Default Tailwind Admin Icons
@@ -124,4 +133,14 @@ export {
   LogoSkylineIcon,
   LogoFullIcon,
 
+  // Error Icons
+  NotFound404LightIcon,
+  NotFound404DarkIcon,
+  Error500LightIcon,
+  Error500DarkIcon,
+  Error503LightIcon,
+  Error503DarkIcon,
+
+
+  GridIcon01,
 };
