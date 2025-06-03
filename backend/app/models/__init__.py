@@ -13,9 +13,10 @@ from .nft import NFT
 from .userNft import UserNFT
 from .order import Order
 from .transactions import Transaction
+from .verification import UserVerification
 
 __all__ = [
     "Base","User","Wallet","Transaction","Address","SocialLink",
     "Role","UserRole","NFT","UserNFT","Listing","Order",
-    "Notification","AuditEvent",
+    "Notification","AuditEvent", "UserVerification",
 ]
