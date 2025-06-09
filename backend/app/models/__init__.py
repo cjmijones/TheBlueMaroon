@@ -14,9 +14,10 @@ from .userNft import UserNFT
 from .order import Order
 from .transactions import Transaction
 from .verification import UserVerification
+from .fractional_listing import FractionalListing
 
 __all__ = [
     "Base","User","Wallet","Transaction","Address","SocialLink",
     "Role","UserRole","NFT","UserNFT","Listing","Order",
-    "Notification","AuditEvent", "UserVerification",
+    "Notification","AuditEvent", "UserVerification", "FractionalListing",
 ]

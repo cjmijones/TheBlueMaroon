@@ -2,9 +2,12 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { WalletProvider } from "./providers/WalletProvider";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 
+import { ChainContext } from './context/ChainContext.tsx';
+
 import PrivateAppLayout from "./layout/PrivateAppLayout";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Home from "./pages/Dashboard/Home";
+import Web3Dashboard from "./pages/Dashboard/Web3Commerce";
 import Blank from "./pages/Blank";
 import OAuthSignInPage from "./components/Login";
 import Testboard from "./components/Testboard";
@@ -20,6 +23,8 @@ import BarChart from "./pages/Charts/BarChart";
 import UserProfiles from "./components/UserProfiles";
 
 export default function App() {
+  const defaultChainId = import.meta.env.DEV ? 11155111 : 1;
+
   return (
     <WalletProvider>
       <Router>
@@ -44,6 +49,13 @@ export default function App() {
 
             {/* Dashboard shell */}
             <Route path="/dashboard" element={<Home />} />
+
+
+            <Route path="/web3-commerce" element={
+              <ChainContext.Provider value={defaultChainId}>
+                <Web3Dashboard />
+              </ChainContext.Provider>
+            } />
 
             {/* Ui Elements */}
             <Route path="/alerts" element={<Alerts />} />

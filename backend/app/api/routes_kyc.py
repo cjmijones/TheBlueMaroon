@@ -5,7 +5,6 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
 
 from app.auth.deps import get_current_user, get_db
 from app.services.didit import create_verification_session
@@ -65,11 +64,11 @@ async def didit_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     if not row:
         raise HTTPException(404, "User verification row missing")
 
-    row.idme_uuid = session["session_id"]
+    row.user_id = session["session_id"]
     row.aml_status = "clear" if aml_score < 60 else "reject"
     if decision == "approved":
-        row.id_verified_at = datetime.utcnow()
-    row.aml_checked_at = datetime.utcnow()
+        row.id_verified_at = datetime.now()
+    row.aml_checked_at = datetime.now()
     await db.commit()
 
     # Promote role if fully cleared

@@ -1,6 +1,7 @@
 # routes_wallets.py
 import os
 import json
+import re
 from datetime import datetime, timezone, timedelta
 from secrets import token_urlsafe
 from urllib.parse import urlparse
@@ -16,7 +17,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import User
 from app.schemas.wallet import WalletCreate, WalletRead
 from app.crud import wallet as crud
+from app.services.chain import get_eth_balance, get_erc20_balance
 from app.auth.deps import get_db, get_current_user, get_redis
+from app.core.chains import CHAINS
+
 from siwe import (
     SiweMessage,
     VerificationError,
@@ -121,6 +125,10 @@ def verify_siwe(payload: WalletCreate, expected_domain: str, expected_nonce: str
         raise HTTPException(400, f"SIWE verification failed: {ex}")
 
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Initial Nonce Post Route
+# ──────────────────────────────────────────────────────────────────────────────
+
 @router.post("/nonce")
 async def issue_nonce(
     user : Annotated[User, Depends(get_current_user)],
@@ -134,6 +142,11 @@ async def issue_nonce(
     logger.debug("🟢 issue_nonce key=%s  nonce=%s", key, nonce)
     return {"nonce": nonce}
 
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Base Wallet Routes
+# ──────────────────────────────────────────────────────────────────────────────
 
 @router.get("/", response_model=list[WalletRead])
 async def my_wallets(
@@ -165,6 +178,21 @@ async def link_wallet(
     logger.debug("✅ Wallet linked user=%s addr=%s", user.id, wallet.address)
     return wallet
 
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Specified Wallet Address Routes
+# ──────────────────────────────────────────────────────────────────────────────
+
+ETH_ADDRESS = re.compile(r"^0x[a-fA-F0-9]{40}$")
+
+@router.get("/{address}/balances")
+async def wallet_balances(address: str,
+                          chain_id: int = 11155111,   # default Sepolia in dev
+                          user=Depends(get_current_user)):
+    if chain_id not in CHAINS(): raise HTTPException(400, "unsupported chain")
+    native = await get_eth_balance(address, chain_id)
+    usdc   = await get_erc20_balance(address, "USDC", chain_id)
+    return {"native_wei": native, "usdc": usdc, "chain_id": chain_id}
 
 
 @router.delete("/{address}", status_code=status.HTTP_204_NO_CONTENT)

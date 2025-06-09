@@ -1,6 +1,5 @@
 # app/models/verification.py
 from datetime import datetime
-from uuid import UUID
 from sqlalchemy import Column, String, DateTime, SmallInteger, ForeignKey
 from sqlalchemy.orm import relationship
 from .base import Base

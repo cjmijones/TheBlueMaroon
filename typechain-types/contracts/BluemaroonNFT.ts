@@ -21,30 +21,20 @@ import type {
   TypedLogDescription,
   TypedListener,
   TypedContractMethod,
-} from "../../common";
+} from "../common";
 
-export interface FractionalCollectionInterface extends Interface {
+export interface BluemaroonNFTInterface extends Interface {
   getFunction(
     nameOrSignature:
-      | "CREATOR_ROLE"
-      | "DEFAULT_ADMIN_ROLE"
       | "approve"
       | "balanceOf"
-      | "buyShares"
       | "getApproved"
-      | "getRoleAdmin"
-      | "grantRole"
-      | "hasRole"
       | "isApprovedForAll"
-      | "mintWithShares"
+      | "mint"
       | "name"
-      | "nextTokenId"
       | "ownerOf"
-      | "renounceRole"
-      | "revokeRole"
       | "safeTransferFrom(address,address,uint256)"
       | "safeTransferFrom(address,address,uint256,bytes)"
-      | "sale"
       | "setApprovalForAll"
       | "supportsInterface"
       | "symbol"
@@ -58,22 +48,9 @@ export interface FractionalCollectionInterface extends Interface {
       | "ApprovalForAll"
       | "BatchMetadataUpdate"
       | "MetadataUpdate"
-      | "Minted"
-      | "RoleAdminChanged"
-      | "RoleGranted"
-      | "RoleRevoked"
-      | "SharesPurchased"
       | "Transfer"
   ): EventFragment;
 
-  encodeFunctionData(
-    functionFragment: "CREATOR_ROLE",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "DEFAULT_ADMIN_ROLE",
-    values?: undefined
-  ): string;
   encodeFunctionData(
     functionFragment: "approve",
     values: [AddressLike, BigNumberish]
@@ -83,49 +60,18 @@ export interface FractionalCollectionInterface extends Interface {
     values: [AddressLike]
   ): string;
   encodeFunctionData(
-    functionFragment: "buyShares",
-    values: [BigNumberish, BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "getApproved",
     values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "getRoleAdmin",
-    values: [BytesLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "grantRole",
-    values: [BytesLike, AddressLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "hasRole",
-    values: [BytesLike, AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "isApprovedForAll",
     values: [AddressLike, AddressLike]
   ): string;
-  encodeFunctionData(
-    functionFragment: "mintWithShares",
-    values: [string, BigNumberish, BigNumberish]
-  ): string;
+  encodeFunctionData(functionFragment: "mint", values: [string]): string;
   encodeFunctionData(functionFragment: "name", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "nextTokenId",
-    values?: undefined
-  ): string;
   encodeFunctionData(
     functionFragment: "ownerOf",
     values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "renounceRole",
-    values: [BytesLike, AddressLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "revokeRole",
-    values: [BytesLike, AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "safeTransferFrom(address,address,uint256)",
@@ -135,7 +81,6 @@ export interface FractionalCollectionInterface extends Interface {
     functionFragment: "safeTransferFrom(address,address,uint256,bytes)",
     values: [AddressLike, AddressLike, BigNumberish, BytesLike]
   ): string;
-  encodeFunctionData(functionFragment: "sale", values: [BigNumberish]): string;
   encodeFunctionData(
     functionFragment: "setApprovalForAll",
     values: [AddressLike, boolean]
@@ -154,46 +99,19 @@ export interface FractionalCollectionInterface extends Interface {
     values: [AddressLike, AddressLike, BigNumberish]
   ): string;
 
-  decodeFunctionResult(
-    functionFragment: "CREATOR_ROLE",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "DEFAULT_ADMIN_ROLE",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "approve", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "buyShares", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getApproved",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "getRoleAdmin",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: "grantRole", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "hasRole", data: BytesLike): Result;
-  decodeFunctionResult(
     functionFragment: "isApprovedForAll",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "mintWithShares",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "mint", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "nextTokenId",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "ownerOf", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "renounceRole",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: "revokeRole", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "safeTransferFrom(address,address,uint256)",
     data: BytesLike
@@ -202,7 +120,6 @@ export interface FractionalCollectionInterface extends Interface {
     functionFragment: "safeTransferFrom(address,address,uint256,bytes)",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "sale", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "setApprovalForAll",
     data: BytesLike
@@ -287,95 +204,6 @@ export namespace MetadataUpdateEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export namespace MintedEvent {
-  export type InputTuple = [tokenId: BigNumberish, sharesToken: AddressLike];
-  export type OutputTuple = [tokenId: bigint, sharesToken: string];
-  export interface OutputObject {
-    tokenId: bigint;
-    sharesToken: string;
-  }
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
-}
-
-export namespace RoleAdminChangedEvent {
-  export type InputTuple = [
-    role: BytesLike,
-    previousAdminRole: BytesLike,
-    newAdminRole: BytesLike
-  ];
-  export type OutputTuple = [
-    role: string,
-    previousAdminRole: string,
-    newAdminRole: string
-  ];
-  export interface OutputObject {
-    role: string;
-    previousAdminRole: string;
-    newAdminRole: string;
-  }
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
-}
-
-export namespace RoleGrantedEvent {
-  export type InputTuple = [
-    role: BytesLike,
-    account: AddressLike,
-    sender: AddressLike
-  ];
-  export type OutputTuple = [role: string, account: string, sender: string];
-  export interface OutputObject {
-    role: string;
-    account: string;
-    sender: string;
-  }
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
-}
-
-export namespace RoleRevokedEvent {
-  export type InputTuple = [
-    role: BytesLike,
-    account: AddressLike,
-    sender: AddressLike
-  ];
-  export type OutputTuple = [role: string, account: string, sender: string];
-  export interface OutputObject {
-    role: string;
-    account: string;
-    sender: string;
-  }
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
-}
-
-export namespace SharesPurchasedEvent {
-  export type InputTuple = [
-    tokenId: BigNumberish,
-    buyer: AddressLike,
-    amount: BigNumberish
-  ];
-  export type OutputTuple = [tokenId: bigint, buyer: string, amount: bigint];
-  export interface OutputObject {
-    tokenId: bigint;
-    buyer: string;
-    amount: bigint;
-  }
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
-}
-
 export namespace TransferEvent {
   export type InputTuple = [
     from: AddressLike,
@@ -394,11 +222,11 @@ export namespace TransferEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export interface FractionalCollection extends BaseContract {
-  connect(runner?: ContractRunner | null): FractionalCollection;
+export interface BluemaroonNFT extends BaseContract {
+  connect(runner?: ContractRunner | null): BluemaroonNFT;
   waitForDeployment(): Promise<this>;
 
-  interface: FractionalCollectionInterface;
+  interface: BluemaroonNFTInterface;
 
   queryFilter<TCEvent extends TypedContractEvent>(
     event: TCEvent,
@@ -437,10 +265,6 @@ export interface FractionalCollection extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
-  CREATOR_ROLE: TypedContractMethod<[], [string], "view">;
-
-  DEFAULT_ADMIN_ROLE: TypedContractMethod<[], [string], "view">;
-
   approve: TypedContractMethod<
     [to: AddressLike, tokenId: BigNumberish],
     [void],
@@ -449,27 +273,7 @@ export interface FractionalCollection extends BaseContract {
 
   balanceOf: TypedContractMethod<[owner: AddressLike], [bigint], "view">;
 
-  buyShares: TypedContractMethod<
-    [tokenId: BigNumberish, amount: BigNumberish],
-    [void],
-    "payable"
-  >;
-
   getApproved: TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
-
-  getRoleAdmin: TypedContractMethod<[role: BytesLike], [string], "view">;
-
-  grantRole: TypedContractMethod<
-    [role: BytesLike, account: AddressLike],
-    [void],
-    "nonpayable"
-  >;
-
-  hasRole: TypedContractMethod<
-    [role: BytesLike, account: AddressLike],
-    [boolean],
-    "view"
-  >;
 
   isApprovedForAll: TypedContractMethod<
     [owner: AddressLike, operator: AddressLike],
@@ -477,29 +281,11 @@ export interface FractionalCollection extends BaseContract {
     "view"
   >;
 
-  mintWithShares: TypedContractMethod<
-    [uri: string, shareCap: BigNumberish, price: BigNumberish],
-    [bigint],
-    "nonpayable"
-  >;
+  mint: TypedContractMethod<[tokenURI: string], [bigint], "nonpayable">;
 
   name: TypedContractMethod<[], [string], "view">;
 
-  nextTokenId: TypedContractMethod<[], [bigint], "view">;
-
   ownerOf: TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
-
-  renounceRole: TypedContractMethod<
-    [role: BytesLike, callerConfirmation: AddressLike],
-    [void],
-    "nonpayable"
-  >;
-
-  revokeRole: TypedContractMethod<
-    [role: BytesLike, account: AddressLike],
-    [void],
-    "nonpayable"
-  >;
 
   "safeTransferFrom(address,address,uint256)": TypedContractMethod<
     [from: AddressLike, to: AddressLike, tokenId: BigNumberish],
@@ -516,19 +302,6 @@ export interface FractionalCollection extends BaseContract {
     ],
     [void],
     "nonpayable"
-  >;
-
-  sale: TypedContractMethod<
-    [arg0: BigNumberish],
-    [
-      [string, bigint, bigint, bigint] & {
-        sharesToken: string;
-        pricePerShare: bigint;
-        cap: bigint;
-        sold: bigint;
-      }
-    ],
-    "view"
   >;
 
   setApprovalForAll: TypedContractMethod<
@@ -558,12 +331,6 @@ export interface FractionalCollection extends BaseContract {
   ): T;
 
   getFunction(
-    nameOrSignature: "CREATOR_ROLE"
-  ): TypedContractMethod<[], [string], "view">;
-  getFunction(
-    nameOrSignature: "DEFAULT_ADMIN_ROLE"
-  ): TypedContractMethod<[], [string], "view">;
-  getFunction(
     nameOrSignature: "approve"
   ): TypedContractMethod<
     [to: AddressLike, tokenId: BigNumberish],
@@ -574,32 +341,8 @@ export interface FractionalCollection extends BaseContract {
     nameOrSignature: "balanceOf"
   ): TypedContractMethod<[owner: AddressLike], [bigint], "view">;
   getFunction(
-    nameOrSignature: "buyShares"
-  ): TypedContractMethod<
-    [tokenId: BigNumberish, amount: BigNumberish],
-    [void],
-    "payable"
-  >;
-  getFunction(
     nameOrSignature: "getApproved"
   ): TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
-  getFunction(
-    nameOrSignature: "getRoleAdmin"
-  ): TypedContractMethod<[role: BytesLike], [string], "view">;
-  getFunction(
-    nameOrSignature: "grantRole"
-  ): TypedContractMethod<
-    [role: BytesLike, account: AddressLike],
-    [void],
-    "nonpayable"
-  >;
-  getFunction(
-    nameOrSignature: "hasRole"
-  ): TypedContractMethod<
-    [role: BytesLike, account: AddressLike],
-    [boolean],
-    "view"
-  >;
   getFunction(
     nameOrSignature: "isApprovedForAll"
   ): TypedContractMethod<
@@ -608,35 +351,14 @@ export interface FractionalCollection extends BaseContract {
     "view"
   >;
   getFunction(
-    nameOrSignature: "mintWithShares"
-  ): TypedContractMethod<
-    [uri: string, shareCap: BigNumberish, price: BigNumberish],
-    [bigint],
-    "nonpayable"
-  >;
+    nameOrSignature: "mint"
+  ): TypedContractMethod<[tokenURI: string], [bigint], "nonpayable">;
   getFunction(
     nameOrSignature: "name"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
-    nameOrSignature: "nextTokenId"
-  ): TypedContractMethod<[], [bigint], "view">;
-  getFunction(
     nameOrSignature: "ownerOf"
   ): TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
-  getFunction(
-    nameOrSignature: "renounceRole"
-  ): TypedContractMethod<
-    [role: BytesLike, callerConfirmation: AddressLike],
-    [void],
-    "nonpayable"
-  >;
-  getFunction(
-    nameOrSignature: "revokeRole"
-  ): TypedContractMethod<
-    [role: BytesLike, account: AddressLike],
-    [void],
-    "nonpayable"
-  >;
   getFunction(
     nameOrSignature: "safeTransferFrom(address,address,uint256)"
   ): TypedContractMethod<
@@ -655,20 +377,6 @@ export interface FractionalCollection extends BaseContract {
     ],
     [void],
     "nonpayable"
-  >;
-  getFunction(
-    nameOrSignature: "sale"
-  ): TypedContractMethod<
-    [arg0: BigNumberish],
-    [
-      [string, bigint, bigint, bigint] & {
-        sharesToken: string;
-        pricePerShare: bigint;
-        cap: bigint;
-        sold: bigint;
-      }
-    ],
-    "view"
   >;
   getFunction(
     nameOrSignature: "setApprovalForAll"
@@ -723,41 +431,6 @@ export interface FractionalCollection extends BaseContract {
     MetadataUpdateEvent.OutputObject
   >;
   getEvent(
-    key: "Minted"
-  ): TypedContractEvent<
-    MintedEvent.InputTuple,
-    MintedEvent.OutputTuple,
-    MintedEvent.OutputObject
-  >;
-  getEvent(
-    key: "RoleAdminChanged"
-  ): TypedContractEvent<
-    RoleAdminChangedEvent.InputTuple,
-    RoleAdminChangedEvent.OutputTuple,
-    RoleAdminChangedEvent.OutputObject
-  >;
-  getEvent(
-    key: "RoleGranted"
-  ): TypedContractEvent<
-    RoleGrantedEvent.InputTuple,
-    RoleGrantedEvent.OutputTuple,
-    RoleGrantedEvent.OutputObject
-  >;
-  getEvent(
-    key: "RoleRevoked"
-  ): TypedContractEvent<
-    RoleRevokedEvent.InputTuple,
-    RoleRevokedEvent.OutputTuple,
-    RoleRevokedEvent.OutputObject
-  >;
-  getEvent(
-    key: "SharesPurchased"
-  ): TypedContractEvent<
-    SharesPurchasedEvent.InputTuple,
-    SharesPurchasedEvent.OutputTuple,
-    SharesPurchasedEvent.OutputObject
-  >;
-  getEvent(
     key: "Transfer"
   ): TypedContractEvent<
     TransferEvent.InputTuple,
@@ -808,61 +481,6 @@ export interface FractionalCollection extends BaseContract {
       MetadataUpdateEvent.InputTuple,
       MetadataUpdateEvent.OutputTuple,
       MetadataUpdateEvent.OutputObject
-    >;
-
-    "Minted(uint256,address)": TypedContractEvent<
-      MintedEvent.InputTuple,
-      MintedEvent.OutputTuple,
-      MintedEvent.OutputObject
-    >;
-    Minted: TypedContractEvent<
-      MintedEvent.InputTuple,
-      MintedEvent.OutputTuple,
-      MintedEvent.OutputObject
-    >;
-
-    "RoleAdminChanged(bytes32,bytes32,bytes32)": TypedContractEvent<
-      RoleAdminChangedEvent.InputTuple,
-      RoleAdminChangedEvent.OutputTuple,
-      RoleAdminChangedEvent.OutputObject
-    >;
-    RoleAdminChanged: TypedContractEvent<
-      RoleAdminChangedEvent.InputTuple,
-      RoleAdminChangedEvent.OutputTuple,
-      RoleAdminChangedEvent.OutputObject
-    >;
-
-    "RoleGranted(bytes32,address,address)": TypedContractEvent<
-      RoleGrantedEvent.InputTuple,
-      RoleGrantedEvent.OutputTuple,
-      RoleGrantedEvent.OutputObject
-    >;
-    RoleGranted: TypedContractEvent<
-      RoleGrantedEvent.InputTuple,
-      RoleGrantedEvent.OutputTuple,
-      RoleGrantedEvent.OutputObject
-    >;
-
-    "RoleRevoked(bytes32,address,address)": TypedContractEvent<
-      RoleRevokedEvent.InputTuple,
-      RoleRevokedEvent.OutputTuple,
-      RoleRevokedEvent.OutputObject
-    >;
-    RoleRevoked: TypedContractEvent<
-      RoleRevokedEvent.InputTuple,
-      RoleRevokedEvent.OutputTuple,
-      RoleRevokedEvent.OutputObject
-    >;
-
-    "SharesPurchased(uint256,address,uint256)": TypedContractEvent<
-      SharesPurchasedEvent.InputTuple,
-      SharesPurchasedEvent.OutputTuple,
-      SharesPurchasedEvent.OutputObject
-    >;
-    SharesPurchased: TypedContractEvent<
-      SharesPurchasedEvent.InputTuple,
-      SharesPurchasedEvent.OutputTuple,
-      SharesPurchasedEvent.OutputObject
     >;
 
     "Transfer(address,address,uint256)": TypedContractEvent<

@@ -38,6 +38,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC4906__factory>;
     getContractFactory(
+      name: "Clones",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Clones__factory>;
+    getContractFactory(
       name: "ERC20",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ERC20__factory>;
@@ -74,6 +78,14 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC721Receiver__factory>;
     getContractFactory(
+      name: "Create2",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Create2__factory>;
+    getContractFactory(
+      name: "Errors",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Errors__factory>;
+    getContractFactory(
       name: "ERC165",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ERC165__factory>;
@@ -102,9 +114,21 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.FractionalShare__factory>;
     getContractFactory(
+      name: "BluemaroonNFT",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.BluemaroonNFT__factory>;
+    getContractFactory(
+      name: "FractionalVault",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.FractionalVault__factory>;
+    getContractFactory(
       name: "Lock",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Lock__factory>;
+    getContractFactory(
+      name: "VaultFactory",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.VaultFactory__factory>;
 
     getContractAt(
       name: "AccessControl",
@@ -136,6 +160,11 @@ declare module "hardhat/types/runtime" {
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.IERC4906>;
+    getContractAt(
+      name: "Clones",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Clones>;
     getContractAt(
       name: "ERC20",
       address: string | ethers.Addressable,
@@ -182,6 +211,16 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IERC721Receiver>;
     getContractAt(
+      name: "Create2",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Create2>;
+    getContractAt(
+      name: "Errors",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Errors>;
+    getContractAt(
       name: "ERC165",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -217,10 +256,25 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.FractionalShare>;
     getContractAt(
+      name: "BluemaroonNFT",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.BluemaroonNFT>;
+    getContractAt(
+      name: "FractionalVault",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.FractionalVault>;
+    getContractAt(
       name: "Lock",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.Lock>;
+    getContractAt(
+      name: "VaultFactory",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.VaultFactory>;
 
     deployContract(
       name: "AccessControl",
@@ -246,6 +300,10 @@ declare module "hardhat/types/runtime" {
       name: "IERC4906",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IERC4906>;
+    deployContract(
+      name: "Clones",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.Clones>;
     deployContract(
       name: "ERC20",
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -283,6 +341,14 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IERC721Receiver>;
     deployContract(
+      name: "Create2",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.Create2>;
+    deployContract(
+      name: "Errors",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.Errors>;
+    deployContract(
       name: "ERC165",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.ERC165>;
@@ -311,9 +377,21 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.FractionalShare>;
     deployContract(
+      name: "BluemaroonNFT",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BluemaroonNFT>;
+    deployContract(
+      name: "FractionalVault",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.FractionalVault>;
+    deployContract(
       name: "Lock",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Lock>;
+    deployContract(
+      name: "VaultFactory",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.VaultFactory>;
 
     deployContract(
       name: "AccessControl",
@@ -345,6 +423,11 @@ declare module "hardhat/types/runtime" {
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IERC4906>;
+    deployContract(
+      name: "Clones",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.Clones>;
     deployContract(
       name: "ERC20",
       args: any[],
@@ -391,6 +474,16 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IERC721Receiver>;
     deployContract(
+      name: "Create2",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.Create2>;
+    deployContract(
+      name: "Errors",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.Errors>;
+    deployContract(
       name: "ERC165",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -426,10 +519,25 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.FractionalShare>;
     deployContract(
+      name: "BluemaroonNFT",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BluemaroonNFT>;
+    deployContract(
+      name: "FractionalVault",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.FractionalVault>;
+    deployContract(
       name: "Lock",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Lock>;
+    deployContract(
+      name: "VaultFactory",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.VaultFactory>;
 
     // default types
     getContractFactory(
