@@ -18,4 +18,4 @@ prometheus-fastapi-instrumentator
 siwe
 redis==6.1.0
 
-python-multipart==0.0.9
+python-multipart>=0.0.18

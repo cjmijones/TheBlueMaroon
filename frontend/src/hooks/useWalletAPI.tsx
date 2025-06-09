@@ -1,18 +1,8 @@
 // useWalletsAPI.tsx
 import { useAuth0 } from "@auth0/auth0-react";
-import axios from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { WalletCreate } from "../types";  // ✅ Import the type
-
-let apiBaseURL = "";
-
-if (import.meta.env.VITE_ENV_TYPE === "prod") {
-  apiBaseURL = `${import.meta.env.VITE_API_PROD_URL}/api`;
-} else {
-  apiBaseURL = `${import.meta.env.VITE_API_DEV_URL}/api`;
-}
-
-const api = axios.create({ baseURL: apiBaseURL });
+import { api } from "../lib/api";   
 
 export function useWallets() {
   const { getAccessTokenSilently } = useAuth0();

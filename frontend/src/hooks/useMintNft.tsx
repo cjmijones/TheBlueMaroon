@@ -18,13 +18,21 @@ export function useMintNft() {
       });
 
       /* 2️⃣  User signs on-chain mint (Sepolia in dev) */
-      await writeContractAsync({
-        abi: NFT_ABI,
-        address: import.meta.env.VITE_NFT_ADDRESS as `0x${string}`,
-        functionName: "mint",
-        args: [data.token_uri],
-        chainId: 11155111,            // dev default – ChainContext can override
-      });
+      console.log("Attempting to mint NFT with token URI:", data.token_uri);
+
+      try {
+        const tx = await writeContractAsync({
+          abi: NFT_ABI,
+          address: import.meta.env.VITE_NFT_ADDRESS as `0x${string}`,
+          functionName: "mint",
+          args: [data.token_uri],
+          chainId: 11155111,            // dev default – ChainContext can override
+        });
+        console.log("NFT mint transaction successful:", tx);
+      } catch (error) {
+        console.error("NFT mint transaction failed:", error);
+        throw error;
+      }
     },
   });
 }
