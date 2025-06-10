@@ -1,10 +1,10 @@
 // components/cards/MintNftCard.tsx
-import { useState } from "react";
+import { useState }   from "react";
 import { useMintNft } from "../../hooks/useMintNft";
-import Button from "../ui/button/Button";
+import Button         from "../ui/button/Button";
 
 export default function MintNftCard() {
-  const { mutateAsync, isPending } = useMintNft();
+  const { mutateAsync, isPending, isReady, errorMsg } = useMintNft();
   const [file, setFile] = useState<File>();
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -25,42 +25,63 @@ export default function MintNftCard() {
           Mint&nbsp;New&nbsp;NFT
         </h2>
 
+        {/* inline warning when chain/env not ready */}
+        {!isReady && (
+          <p className="rounded-lg bg-yellow-50 p-3 text-sm text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200">
+            {errorMsg}
+          </p>
+        )}
+
+        {/* -------------------- inputs -------------------- */}
         <div className="grid gap-4 sm:grid-cols-2">
+          {/* name */}
           <input
             name="name"
             placeholder="Name"
             required
+            disabled={!isReady || isPending}
             className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm
                        text-gray-700 placeholder-gray-400 shadow-theme-xs
                        focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none
+                       disabled:cursor-not-allowed disabled:opacity-50
                        dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500"
           />
 
+          {/* description */}
           <input
             name="description"
             placeholder="Description"
             required
+            disabled={!isReady || isPending}
             className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm
                        text-gray-700 placeholder-gray-400 shadow-theme-xs
                        focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none
+                       disabled:cursor-not-allowed disabled:opacity-50
                        dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500"
           />
 
-          {/* file picker spans full width */}
+          {/* image file picker (spans both columns) */}
           <input
             type="file"
             accept="image/*"
-            onChange={(e) => setFile(e.target.files?.[0])}
             required
+            onChange={(e) => setFile(e.target.files?.[0])}
+            disabled={!isReady || isPending}
             className="col-span-2 w-full cursor-pointer rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm
                        text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-primary-600 file:px-4
                        file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-primary-700
                        focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none
+                       disabled:cursor-not-allowed disabled:opacity-50
                        dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
           />
         </div>
 
-        <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
+        {/* submit */}
+        <Button
+          type="submit"
+          disabled={!isReady || isPending}
+          className="w-full sm:w-auto"
+        >
           {isPending ? "Minting…" : "Mint NFT"}
         </Button>
       </form>

@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     allowed_hosts: List[str] = ["*"]
 
     # ──────────────────  Auth0  ───────────────────
+    public_base_url: str | None = "http://localhost:8000"
+
+    # ──────────────────  Auth0  ───────────────────
     secret_key: str
     auth0_domain: str
     auth0_audience: str

@@ -12,7 +12,6 @@ export default function FractionalizeCard() {
       nft:     f.get("nft") as `0x${string}`,
       id:      Number(f.get("tokenId")),
       shares:  Number(f.get("shares")),
-      chain_id: 11155111, // Sepolia in dev
     });
   };
 

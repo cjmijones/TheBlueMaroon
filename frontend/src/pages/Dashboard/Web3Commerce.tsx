@@ -1,7 +1,7 @@
 import PageMeta from "../../components/common/PageMeta";
 import WalletBalanceCard from "../../components/web3Dash/WalletBalanceCard";
 import ActiveListingsGrid from "../../components/web3Dash/ActiveListingsGrid";
-import OrdersStatusCard from "../../components/web3Dash/OrdersStatusCard";
+import UserAssetsCard from "../../components/web3Dash/UserAssetsCard";
 import IdentityStatusCard from "../../components/web3Dash/IdentityStatusCard";
 import MintNftCard from "../../components/NFTS/MintNftCard";
 import FractionalizeCard from "../../components/NFTS/FractionalizeCard";
@@ -25,7 +25,7 @@ export default function Web3Dashboard() {
 
         {/* ───────────────────────────── Col B ───────────────────────────── */}
         <aside className="col-span-12 space-y-6 xl:col-span-4">
-          <OrdersStatusCard />
+          <UserAssetsCard />
           <IdentityStatusCard />
         </aside>
       </div>

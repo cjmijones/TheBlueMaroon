@@ -16,6 +16,7 @@ from app.api.routes_wallets import router as wallet_router
 from app.api.routes_kyc import router as kyc_router
 from app.api.routes_fractional import router as fractional_router
 from app.api.routes_nfts import router as nfts_router
+from app.api.routes_assets import router as assets_router
 
 from app.core.config import get_settings
 from app.core.logging_config import setup_logging
@@ -77,6 +78,7 @@ api_router.include_router(wallet_router)
 api_router.include_router(kyc_router)
 api_router.include_router(fractional_router)
 api_router.include_router(nfts_router)
+api_router.include_router(assets_router)
 
 if settings.env_type == "dev":
     api_router.include_router(test_token_router)

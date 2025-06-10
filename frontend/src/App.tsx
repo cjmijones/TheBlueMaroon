@@ -27,59 +27,57 @@ export default function App() {
 
   return (
     <WalletProvider>
-      <Router>
-        <ScrollToTop />
+      <ChainContext.Provider value={defaultChainId}>
+        <Router>
+          <ScrollToTop />
 
-        <Routes>
-          {/* Public route */}
-          <Route path="/" element={<OAuthSignInPage />} />
+          <Routes>
+            {/* Public route */}
+            <Route path="/" element={<OAuthSignInPage />} />
 
-          {/* Test Protected Route outside of Private App Layout - may be deprecated */}
-          <Route
-              path="/testboard"
-              element={
-                <ProtectedRoute>
-                  <Testboard />
-                </ProtectedRoute>
-              }
-            />
+            {/* Test Protected Route outside of Private App Layout - may be deprecated */}
+            <Route
+                path="/testboard"
+                element={
+                  <ProtectedRoute>
+                    <Testboard />
+                  </ProtectedRoute>
+                }
+              />
 
-          {/* Protected branch – EVERYTHING nested under here requires auth */}
-          <Route element={<PrivateAppLayout />}>
+            {/* Protected branch – EVERYTHING nested under here requires auth */}
+            <Route element={<PrivateAppLayout />}>
 
-            {/* Dashboard shell */}
-            <Route path="/dashboard" element={<Home />} />
+              {/* Dashboard shell */}
+              <Route path="/dashboard" element={<Home />} />
 
 
-            <Route path="/web3-commerce" element={
-              <ChainContext.Provider value={defaultChainId}>
-                <Web3Dashboard />
-              </ChainContext.Provider>
-            } />
+              <Route path="/web3-commerce" element={<Web3Dashboard />} />
 
-            {/* Ui Elements */}
-            <Route path="/alerts" element={<Alerts />} />
-            <Route path="/avatars" element={<Avatars />} />
-            <Route path="/badge" element={<Badges />} />
-            <Route path="/buttons" element={<Buttons />} />
-            <Route path="/images" element={<Images />} />
-            <Route path="/videos" element={<Videos />} />
+              {/* Ui Elements */}
+              <Route path="/alerts" element={<Alerts />} />
+              <Route path="/avatars" element={<Avatars />} />
+              <Route path="/badge" element={<Badges />} />
+              <Route path="/buttons" element={<Buttons />} />
+              <Route path="/images" element={<Images />} />
+              <Route path="/videos" element={<Videos />} />
 
-            {/* Charts */}
-            <Route path="/line-chart" element={<LineChart />} />
-            <Route path="/bar-chart" element={<BarChart />} />            
+              {/* Charts */}
+              <Route path="/line-chart" element={<LineChart />} />
+              <Route path="/bar-chart" element={<BarChart />} />            
 
-            {/* Other private pages */}
-            <Route path="/blank" element={<Blank />} />
-            <Route path="/profile" element={<UserProfiles />} />
+              {/* Other private pages */}
+              <Route path="/blank" element={<Blank />} />
+              <Route path="/profile" element={<UserProfiles />} />
 
-          </Route>
+            </Route>
 
-          {/* Fallback Route */}
-          <Route path="*" element={<NotFound />} />
+            {/* Fallback Route */}
+            <Route path="*" element={<NotFound />} />
 
-        </Routes>
-      </Router>
+          </Routes>
+        </Router>
+      </ChainContext.Provider>
     </WalletProvider>
   );
 }
