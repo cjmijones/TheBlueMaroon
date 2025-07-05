@@ -58,7 +58,14 @@ export interface FractionalVaultInterface extends Interface {
   encodeFunctionData(functionFragment: "decimals", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "initialize",
-    values: [AddressLike, BigNumberish, BigNumberish, string, string]
+    values: [
+      AddressLike,
+      AddressLike,
+      BigNumberish,
+      BigNumberish,
+      string,
+      string
+    ]
   ): string;
   encodeFunctionData(
     functionFragment: "initialized",
@@ -202,6 +209,7 @@ export interface FractionalVault extends BaseContract {
 
   initialize: TypedContractMethod<
     [
+      _owner: AddressLike,
       _nft: AddressLike,
       _tokenId: BigNumberish,
       shares: BigNumberish,
@@ -264,6 +272,7 @@ export interface FractionalVault extends BaseContract {
     nameOrSignature: "initialize"
   ): TypedContractMethod<
     [
+      _owner: AddressLike,
       _nft: AddressLike,
       _tokenId: BigNumberish,
       shares: BigNumberish,

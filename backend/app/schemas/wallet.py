@@ -22,7 +22,8 @@ class WalletRead(BaseModel):
     chain_id: int
     ens_name: str | None = None
     is_primary: bool
-    linked_at: datetime  # ✅ Matches SQLAlchemy field
+    linked_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True
+    }

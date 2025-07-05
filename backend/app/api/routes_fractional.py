@@ -1,109 +1,118 @@
-# app/api/routes_fractional.py
-import re, logging, json
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Body
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import insert
-from app.auth.deps      import get_current_user, get_db
-from app.models         import FractionalListing
-from app.core.chains    import CHAINS
+from sqlalchemy import text
+import logging
 
-router = APIRouter(prefix="/fractional", tags=["fractional"])
-log = logging.getLogger("fractional")
+from app.schemas.fractional import FractionalCreate, FractionalFinalize
+from app.core.addresses     import CHAINS
+from app.auth.deps          import get_current_user, get_db
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Helpers
-# ─────────────────────────────────────────────────────────────────────────────
-HEX_ADDRESS = re.compile(r"^0x[a-fA-F0-9]{40}$")
+log     = logging.getLogger("api.fractional")
+router  = APIRouter(prefix="/fractional", tags=["fractional"])
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# POST /fractional   – draft listing + constructor calldata
-# ─────────────────────────────────────────────────────────────────────────────
-@router.post("/", status_code=status.HTTP_201_CREATED)
-async def fractionalize(
-    payload: dict,
-    user:      str          = Depends(get_current_user),
-    db: AsyncSession        = Depends(get_db),
+# ─────────────────────────────── draft (POST) ────────────────────────────────
+@router.post("/", status_code=201)
+async def create_fractional_listing(
+    payload: FractionalCreate,
+    db:      AsyncSession = Depends(get_db),
+    user                  = Depends(get_current_user),
 ):
-    """
-    ➊ Validates params  
-    ➋ Persists a *draft* row (so UI can poll)  
-    ➌ Returns constructor args (front-end still deploys via Factory)
-    """
-    nft      = payload.get("nft_contract", "").lower()
-    token_id = int(payload.get("token_id", 0))
-    shares   = int(payload.get("shares",   0))
-    chain_id = int(payload.get("chain_id", 11155111))
+    log.info("🆗 stage-1  payload received %s", payload.model_dump())
 
-    if chain_id not in CHAINS():
-        raise HTTPException(400, "unsupported chain")
+    cfg = CHAINS().get(payload.chain_id)
+    if not cfg or not cfg["factory"]:
+        raise HTTPException(400, "Unsupported chain or missing factory address")
 
-    if not HEX_ADDRESS.match(nft):
-        raise HTTPException(400, "invalid nft address")
-
-    # ── build deterministic vault address (optional UX helper) ───────────
-    factory = CHAINS()[chain_id]["factory"]
-    vault_salt = Web3.solidity_keccak(
-        ["address", "uint256", "address"],
-        [nft, token_id, user.id]
-    ).hex()
-
+    # NB: we do **not** store the predicted vault address;
+    #     it will be written later in the PATCH step.
     await db.execute(
-        insert(FractionalListing).values(
-            nft_contract=nft,
-            token_id=token_id,
-            shares=shares,
-            creator_id=user.id,
-            chain_id=chain_id,
-            vault_salt=vault_salt,             # for debugging
-        ).on_conflict_do_nothing()
+        text(
+            """
+            INSERT INTO fractional_listings
+              (creator_id, vault, nft_contract, token_id, shares,
+               chain_id, round_price, created_at, expires_at)
+            VALUES
+              (:creator_id, NULL, :nft, :token, :shares,
+               :chain, :price, NOW(), NOW() + INTERVAL '7 days')
+            """
+        ),
+        {
+            "creator_id": user.id,
+            "nft":        payload.nft_contract.lower(),
+            "token":      payload.token_id,
+            "shares":     payload.shares,
+            "chain":      payload.chain_id,
+            "price":      payload.round_price,
+        },
     )
     await db.commit()
+    log.info("✅ draft created for %s #%s by %s",
+             payload.nft_contract, payload.token_id, user.id)
+    return {"status": "draft_created"}
 
-    return {"status": "draft-recorded"}
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# POST /fractional/listen  – dev helper to back-fill events
-# ─────────────────────────────────────────────────────────────────────────────
-from web3 import Web3
-from importlib import resources
-
-FACTORY_ABI = json.loads(
-    resources.files("app.abi").joinpath("VaultFactory.json").read_text()
+# ─────────────────────────────── finalize (PATCH) ─────────────────────────────
+@router.patch(
+    "/{vault}",
+    status_code=200,
+    summary="Finalize a draft once the on-chain vault is deployed",
 )
-
-@router.post("/listen", tags=["dev"])
-async def backfill_events(
-    chain_id: int = 11155111,
-    db: AsyncSession = Depends(get_db),
+async def finalize_fractional_listing(
+    vault: str = Path(
+        ...,
+        pattern=r"^0x[a-fA-F0-9]{40}$",
+        description="Deterministic address of the newly deployed vault",
+    ),
+    body:  FractionalFinalize = Body(...),
+    db:    AsyncSession       = Depends(get_db),
+    user                       = Depends(get_current_user),
 ):
     """
-    Development-only endpoint.  
-    Poll latest VaultCreated events and upsert rows.
+    *Only the original creator* may finalise their own draft.  
+    If the row is already finalised we return **409 Conflict**.
     """
-    if chain_id not in CHAINS():
-        raise HTTPException(400, "unsupported")
-
-    w3 = Web3(Web3.HTTPProvider(CHAINS()[chain_id]["rpc"]))
-    factory = w3.eth.contract(
-        address=CHAINS()[chain_id]["factory"],
-        abi=FACTORY_ABI
+    # 1️⃣  locate **one** open draft (no vault yet) by this user
+    draft_row = await db.execute(
+        text(
+            """
+            SELECT id, vault
+            FROM   fractional_listings
+            WHERE  creator_id = :creator
+              AND  vault IS NULL
+            ORDER  BY created_at DESC
+            LIMIT  1
+            """
+        ),
+        {"creator": user.id},
     )
-    logs = factory.events.VaultCreated().get_logs(fromBlock="latest")
-    imported = 0
-    for ev in logs:
-        args = ev["args"]
-        await db.execute(
-            insert(FractionalListing).values(
-                vault      = args.vault,
-                nft_contract = args.nft,
-                token_id   = args.tokenId,
-                shares     = args.shares,
-                creator_id = args.creator,
-                chain_id   = chain_id,
-            ).on_conflict_do_nothing()
-        )
-        imported += 1
+    draft = draft_row.first()
+
+    if not draft:
+        raise HTTPException(404, "Draft listing not found")
+
+    if draft.vault is not None:
+        raise HTTPException(409, "Listing already finalised")
+
+    # 2️⃣  update the row with on-chain data
+    await db.execute(
+        text(
+            """
+            UPDATE fractional_listings
+            SET vault      = :vault,
+                tx_hash    = :tx,
+                status     = 'active',
+                updated_at = NOW()
+            WHERE id       = :id
+            """
+        ),
+        {
+            "vault": vault.lower(),
+            "tx":    body.tx_hash.lower(),
+            "id":    draft.id,
+        },
+    )
     await db.commit()
-    return {"imported": imported}
+
+    log.info("🏁 listing %s finalised by %s (vault %s)", draft.id, user.id, vault)
+    return {"status": "active", "vault": vault}
