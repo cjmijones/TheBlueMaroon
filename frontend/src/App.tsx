@@ -6,7 +6,8 @@ import { ChainContext } from './context/ChainContext.tsx';
 
 import PrivateAppLayout from "./layout/PrivateAppLayout";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import Home from "./pages/Dashboard/Home";
+import LandingHome from "./pages/Home/index.tsx";
+import TailwindHome from "./pages/Dashboard/TailwindHome.tsx";
 import Web3Dashboard from "./pages/Dashboard/Web3Commerce";
 import Blank from "./pages/Blank";
 import OAuthSignInPage from "./components/Login";
@@ -21,6 +22,7 @@ import Videos from "./pages/UiElements/Videos";
 import LineChart from "./pages/Charts/LineChart";
 import BarChart from "./pages/Charts/BarChart";
 import UserProfiles from "./components/UserProfiles";
+import ExplorePage from "./pages/Explore/index.tsx";
 
 export default function App() {
   const defaultChainId = import.meta.env.DEV ? 11155111 : 1;
@@ -49,7 +51,11 @@ export default function App() {
             <Route element={<PrivateAppLayout />}>
 
               {/* Dashboard shell */}
-              <Route path="/dashboard" element={<Home />} />
+              <Route path="/dashboard" element={<LandingHome />} />
+              <Route path="/explore" element={<ExplorePage />} />
+
+              {/* 2️⃣  Old metrics dashboard preserved at /dashboard-home  */}
+              <Route path="/dashboard-home" element={<TailwindHome />} />
 
 
               <Route path="/web3-commerce" element={<Web3Dashboard />} />

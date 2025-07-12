@@ -68,6 +68,7 @@ import { ReactComponent as Error500DarkIcon } from "./500-dark.svg?react";
 import { ReactComponent as Error503LightIcon } from "./503.svg?react";
 import { ReactComponent as Error503DarkIcon } from "./503-dark.svg?react";
 import { ReactComponent as GridIcon01 } from "./grid-01.svg?react";
+import { ReactComponent as FunnelIcon } from "./FunnelIcon.svg?react";
 
 
 export {
@@ -141,6 +142,6 @@ export {
   Error503LightIcon,
   Error503DarkIcon,
 
-
   GridIcon01,
+  FunnelIcon,
 };
