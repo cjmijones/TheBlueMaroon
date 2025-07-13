@@ -23,6 +23,7 @@ import LineChart from "./pages/Charts/LineChart";
 import BarChart from "./pages/Charts/BarChart";
 import UserProfiles from "./components/UserProfiles";
 import ExplorePage from "./pages/Explore/index.tsx";
+import AssetDetail from "./pages/AssetDetail/index.tsx";
 
 export default function App() {
   const defaultChainId = import.meta.env.DEV ? 11155111 : 1;
@@ -53,6 +54,9 @@ export default function App() {
               {/* Dashboard shell */}
               <Route path="/dashboard" element={<LandingHome />} />
               <Route path="/explore" element={<ExplorePage />} />
+
+              {/* Learn → Asset Detail (dynamic) */}
+              <Route path="/asset/:id" element={<AssetDetail />} />
 
               {/* 2️⃣  Old metrics dashboard preserved at /dashboard-home  */}
               <Route path="/dashboard-home" element={<TailwindHome />} />
