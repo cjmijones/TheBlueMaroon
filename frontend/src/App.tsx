@@ -24,6 +24,9 @@ import BarChart from "./pages/Charts/BarChart";
 import UserProfiles from "./components/UserProfiles";
 import ExplorePage from "./pages/Explore/index.tsx";
 import AssetDetail from "./pages/AssetDetail/index.tsx";
+import PortfolioDashboard from "./pages/PortfolioDashboard/index.tsx";
+import HoldingDetailPage from "./pages/HoldingDetail/index.tsx";
+import TransactionHistory from "./pages/TransactionHistory/index.tsx";
 
 export default function App() {
   const defaultChainId = import.meta.env.DEV ? 11155111 : 1;
@@ -57,6 +60,11 @@ export default function App() {
 
               {/* Learn → Asset Detail (dynamic) */}
               <Route path="/asset/:id" element={<AssetDetail />} />
+
+              {/* ── Portfolio tracking ───────────────────────────── */}
+              <Route path="/portfolio" element={<PortfolioDashboard />} />
+              <Route path="/holding/:id" element={<HoldingDetailPage />}  />
+              <Route path="/history" element={<TransactionHistory />} />
 
               {/* 2️⃣  Old metrics dashboard preserved at /dashboard-home  */}
               <Route path="/dashboard-home" element={<TailwindHome />} />
