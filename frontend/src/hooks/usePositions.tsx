@@ -10,6 +10,7 @@ export interface Position {
   avgPrice: number;
   currentPrice: number;
   image_url?: string;
+  withdrawable?: number;
 }
 
 const MOCK_POSITIONS: Position[] = [
@@ -20,6 +21,7 @@ const MOCK_POSITIONS: Position[] = [
     avgPrice: 130,
     currentPrice: 135,
     image_url: "/mock/monet.jpg",
+    withdrawable: 1.25,
   },
   {
     id: "warhol-campbells",
@@ -28,6 +30,7 @@ const MOCK_POSITIONS: Position[] = [
     avgPrice: 90,
     currentPrice: 92,
     image_url: "/mock/warhol.jpg",
+    withdrawable: 0.0,
   },
 ];
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useEffect } from "react";
 import "@rainbow-me/rainbowkit/styles.css";
 
 import {
@@ -14,12 +14,11 @@ import {
   darkTheme,
 } from "@rainbow-me/rainbowkit";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 export function WalletProvider({ children }: { children: React.ReactNode }) {
   /* ---------------- React-Query ---------------- */
-  const [queryClient] = useState(() => new QueryClient());
+  // const [queryClient] = useState(() => new QueryClient());
 
   /* ---------------- wagmi config --------------- */
   const wagmiConfig = useMemo(
@@ -44,21 +43,20 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       onChange(account) {
         if (!account.address) {
           toast("Wallet disconnected");
-          queryClient.clear();                 // clear stale caches
+          // queryClient.clear(); // Remove this or replace with appropriate cache clear if needed
         }
       },
     });
     return unwatch;                           // cleanup on unmount
-  }, [wagmiConfig, queryClient]);
+  }, [wagmiConfig]);
 
   /* --------------- Providers tree ---------------- */
   return (
     <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={darkTheme()} modalSize="compact">
-          {children}
-        </RainbowKitProvider>
-      </QueryClientProvider>
+      {/* Removed QueryClientProvider here */}
+      <RainbowKitProvider theme={darkTheme()} modalSize="compact">
+        {children}
+      </RainbowKitProvider>
     </WagmiProvider>
   );
 }

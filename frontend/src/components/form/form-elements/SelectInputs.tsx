@@ -5,12 +5,8 @@ import Select from "../Select";
 import MultiSelect from "../MultiSelect";
 
 export default function SelectInputs() {
-  const options = [
-    { value: "marketing", label: "Marketing" },
-    { value: "template", label: "Template" },
-    { value: "development", label: "Development" },
-  ];
-  const handleSelectChange = (value: string) => {
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
     console.log("Selected value:", value);
   };
   const [selectedValues, setSelectedValues] = useState<string[]>([]);
@@ -27,12 +23,13 @@ export default function SelectInputs() {
       <div className="space-y-6">
         <div>
           <Label>Select Input</Label>
-          <Select
-            options={options}
-            placeholder="Select Option"
-            onChange={handleSelectChange}
-            className="dark:bg-dark-900"
-          />
+          <Select onChange={handleSelectChange}>
+            <option value="1">Option 1</option>
+            <option value="2">Option 2</option>
+            <option value="3">Option 3</option>
+            <option value="4">Option 4</option>
+            <option value="5">Option 5</option>
+          </Select>
         </div>
         <div>
           <MultiSelect

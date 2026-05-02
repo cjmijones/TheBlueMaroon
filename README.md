@@ -21,9 +21,9 @@ Build a secure, cloud-native, scalable web application with:
 | Layer          | Technology / Service                              | Purpose                                                   |
 |----------------|---------------------------------------------------|-----------------------------------------------------------|
 | **Frontend**   | [Vite](https://vitejs.dev/), [React](https://reactjs.org/), [TailwindCSS](https://tailwindcss.com/) | Fast modern frontend with utility-first CSS styling       |
-| **Backend**    | [FastAPI](https://fastapi.tiangolo.com/) or [NestJS](https://nestjs.com/) | High-performance async API framework                     |
+| **Backend**    | [FastAPI](https://fastapi.tiangolo.com/) | High-performance async API framework                     |
 | **Database**   | [PostgreSQL](https://www.postgresql.org/) via Supabase or Render | Relational database with strong scalability               |
-| **Auth**       | [Auth0](https://auth0.com/) or [Firebase Auth](https://firebase.google.com/products/auth) | OAuth2, Social Logins, Secure User Management             |
+| **Auth**       | [Auth0](https://auth0.com/) | OAuth2, Social Logins, Secure User Management             |
 | **Hosting**    | [Vercel](https://vercel.com/) (frontend), [Render](https://render.com/) (backend) | Scalable deployment platform with CI/CD support           |
 | **Security**   | [Cloudflare](https://www.cloudflare.com/)         | DNS management, HTTPS, WAF, DDoS protection               |
 | **Monitoring** | [Sentry](https://sentry.io/)                      | Error and performance monitoring for frontend and backend |
@@ -114,7 +114,7 @@ Project-Directory
 | Vercel         | Frontend hosting + CI/CD         | [vercel.com](https://vercel.com/) |
 | Render         | Backend hosting + DB             | [render.com](https://render.com/) |
 | Auth0          | Authentication (OAuth2)          | [auth0.com](https://auth0.com/) |
-| Cloudflare     | DNS + WAF + DDoS Protection       | [cloudflare.com](https://cloudflare.com/) |
+| Cloudflare     | DNS + WAF + DDoS Protection      | [cloudflare.com](https://cloudflare.com/) |
 | Supabase / DB  | PostgreSQL hosting (optional)    | [supabase.io](https://supabase.io/) |
 | Sentry         | Monitoring and error logging     | [sentry.io](https://sentry.io/) |
 | GitHub         | Version control + deployment     | [github.com](https://github.com/) |
@@ -126,14 +126,23 @@ Project-Directory
 - [x] Initialize frontend and backend boilerplate
 - [x] Set up GitHub repo and push initial code
 - [x] Create accounts for necessary services
-- [ ] Deploy and test basic hello world app with CRUD
+- [x] Deploy and test basic hello world app with CRUD
 - [x] Add login flow with Auth0
 - [x] Add log flow with Auth0
-- [ ] Monitor traffic and error logs with Sentry
+- [x] Scaffold React pages: Landing, Explore, Asset Detail, Portfolio, Holding Detail  
+- [x] Implement Auth0 + SIWE wrapper  
+- [x] Add mock Liquidity & Exit components (Sell / Withdraw)  
+- [ ] **Wire dummy hooks to FastAPI + sub-graph endpoints**  
+- [ ] Replace Sell & Withdraw modals with wagmi `useContractWrite` flows  
+- [ ] Create `/portfolio`, `/transactions`, `/withdrawable` routes in backend  
+- [ ] Live order-book websocket gateway  
+- [ ] Add oracle price feed for NAV widget  
+- [ ] Staging deploy (Render API + Vercel FE)  
+- [ ] Integrate Sentry (React & FastAPI) + Cloudflare WAF  
+- [ ] Load-test target **≥ 500** concurrent wallets  
+- [ ] Tag **`v1.0-beta`** and open closed alpha
 
 ---
-
-> **Note:** This setup is designed to scale and evolve — start simple, add complexity as needed (e.g., Redis caching, GraphQL APIs, serverless functions, etc.)
 
 /
 
@@ -145,16 +154,48 @@ This document tracks the structure, contents, and development progress of each k
 
 | Priority | Area      | Task                                                                 | Status           |
 |----------|-----------|----------------------------------------------------------------------|------------------|
-| 🔥 High   | Backend   | Add unit tests for `verify_jwt` and route auth flows                 | ⬜ Not started |
-| 🔥 High   | Frontend  | Add fallback for missing Auth0 env variables in `main.tsx`           | ⬜ Not started |
-| 🔄 Medium | Backend   | Integrate Alembic with `asyncpg` and test SSL handling               | ⬜ Not started |
-| 🔄 Medium | Frontend  | Improve loading UX in `ProtectedRoute` and `Dashboard`               | ⬜ Not started |
-| 🔄 Medium | Backend   | Replace `Base.metadata.create_all()` with Alembic migrations         | ⬜ Not started |
+| 🔥 High   | Backend   | Add unit tests for `verify_jwt` and route auth flows                 | ✅ Complete |
+| 🔥 High   | Frontend  | Add fallback for missing Auth0 env variables in `main.tsx`           | ✅ Complete |
+| 🔄 Medium | Backend   | Integrate Alembic with `asyncpg` and test SSL handling               | ✅ Complete |
+| 🔄 Medium | Frontend  | Improve loading UX in `ProtectedRoute` and `Dashboard`               | ✅ Complete |
+| 🔄 Medium | Backend   | Replace `Base.metadata.create_all()` with Alembic migrations         | ✅ Complete |
 | ✅ Low    | Frontend  | Implement dark-themed login with Toolpad + MUI                       | ✅ Complete    |
-| 🔄 Medium | Backend   | Add error logging for failed JWT decode attempts                     | ⬜ Not started |
-| 🔄 Medium | Frontend  | Expand dashboard with additional user or app-specific data           | ⬜ Not started |
-| 🧪 Low    | Frontend  | Add support for multiple login providers in `Login.tsx`              | ⬜ Not started |
-| 🧪 Low    | Backend   | Add a `/status` route to include DB and Auth0 connectivity checks    | ⬜ Not started |
+| 🔄 Medium | Backend   | Add error logging for failed JWT decode attempts                     | ✅ Complete |
+| 🔄 Medium | Frontend  | Expand dashboard with additional user or app-specific data           | ✅ Complete |
+| 🧪 Low    | Frontend  | Add support for multiple login providers in `Login.tsx`              | ✅ Complete |
+| 🧪 Low    | Backend   | Add a `/status` route to include DB and Auth0 connectivity checks    | ✅ Complete |
+| 🔥 High | Backend | Implement `/portfolio` endpoint returning wallet-scoped positions | ⬜ Not started |
+| 🔥 High | Frontend | Swap `usePositions`, `usePosition` to live API | ⬜ Not started |
+| 🔥 High | Smart-Contracts | Deploy & test `sell()` and `withdraw()` methods | ⬜ Not started |
+| 🔥 High | Frontend | Wire `SellModal` to wagmi `useContractWrite` | ⬜ Not started |
+| 🔄 Medium | Backend | Websocket order-book feed + `/open-orders` cancel | ⬜ Not started |
+| 🔄 Medium | Frontend | Replace `useOrderBook`, `useOpenOrders` with live data | ⬜ Not started |
+| 🔄 Medium | Backend | Alembic migrations (replace `create_all`) | ⬜ Not started |
+| ✅ Low | Frontend | Dark-mode landing & Explore polish | ✅ Complete |
+| 🧪 Low | Backend | `/status` health route (DB + Auth0 + chain) | ⬜ Not started |
+| 🧪 Low | Docs | Auto-generate FastAPI schema (`/docs`) | ⬜ Not started |
+
+
+\
+
+### 🗂️ Catalogue of Dummy Logic (to-do replacements)
+
+| File / Hook / Component | Location | Current Mock Behaviour | **TODO – Replace With** |
+|---|---|---|---|
+| `useRecentListings` | `src/hooks/useRecentListings.ts` | Returns 3 hard-coded demo listings | REST `GET /listings` or sub-graph query |
+| `useAsset` | `src/hooks/useAsset.ts` | Looks up item in same mock array | REST `GET /assets/:id` + IPFS media fetch |
+| `usePositions` | `src/hooks/usePositions.ts` | `MOCK` array with 2 positions | Secure `GET /portfolio` (wallet-scoped) |
+| `usePosition` | `src/hooks/usePosition.ts` | Filters above list | GraphQL `position(id)` resolver |
+| `useTransactions` | `src/hooks/useTransactions.ts` | Static JSON list | `/transactions?wallet=` endpoint |
+| `useSellQuote` | `src/hooks/useSellQuote.ts` | `qty × 0.01 Ξ` after 500 ms | Price-engine service or on-chain quote |
+| `useWithdrawable` | `src/hooks/useWithdrawable.ts` | `{ eth: 0.1234, usd: 390 }` | Backend `/withdrawable` balance |
+| `useOrderBook` | `src/hooks/useOrderBook.ts` | Static bids / asks arrays | Live order-book websocket / sub-graph |
+| `useOpenOrders` | `src/hooks/useOpenOrders.ts` | Two fake pending orders | `/open-orders` REST + cancel mutation |
+| `NAVWidget` total | `src/components/Portfolio/NAVWidget.tsx` | Sums mock positions | Mark-to-market prices from oracle feed |
+| `SellModal` / `WithdrawModal` | `src/components` | Confirm buttons disabled | wagmi `useContractWrite` + REST |
+| `MarketDepthCard` | `src/components/MarketDepthCard.tsx` | Shows static depth | Live depth feed (websocket) |
+| `OpenOrdersTable` | `src/components/OpenOrdersTable.tsx` | Mock list, cancel disabled | Enable cancel + optimistic refetch |
+
 
 ---
 

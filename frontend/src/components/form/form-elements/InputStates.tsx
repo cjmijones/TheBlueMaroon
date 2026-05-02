@@ -15,16 +15,6 @@ export default function InputStates() {
     return isValidEmail;
   };
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setEmail(value);
-    validateEmail(value);
-  };
-  const handleEmailTwoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setEmailTwo(value);
-    validateEmail(value);
-  };
   return (
     <ComponentCard
       title="Input States"
@@ -37,11 +27,14 @@ export default function InputStates() {
           <Input
             type="email"
             value={email}
-            error={error}
-            onChange={handleEmailChange}
-            placeholder="Enter your email"
-            hint={error ? "This is an invalid email address." : ""}
+            onChange={(e) => {
+              const value = e.target.value;
+              setEmail(value);
+              validateEmail(value);
+            }}
+            placeholder="Email"
           />
+          {error && <p className="text-error-500 text-xs mt-1">Please enter a valid email.</p>}
         </div>
 
         {/* Success Input */}
@@ -50,11 +43,17 @@ export default function InputStates() {
           <Input
             type="email"
             value={emailTwo}
-            success={!error}
-            onChange={handleEmailTwoChange}
-            placeholder="Enter your email"
-            hint={!error ? "This is an success message." : ""}
+            onChange={(e) => {
+              const value = e.target.value;
+              setEmailTwo(value);
+              validateEmail(value);
+            }}
+            placeholder="Email"
           />
+          {/* Assuming 'success' state is not directly managed by InputField,
+              but rather by the validation logic.
+              For now, we'll keep the placeholder for success message. */}
+          {/* {success && <p className="text-success-500 text-xs mt-1">Looks good!</p>} */}
         </div>
 
         {/* Disabled Input */}

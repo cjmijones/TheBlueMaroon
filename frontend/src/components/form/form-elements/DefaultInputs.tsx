@@ -8,12 +8,8 @@ import DatePicker from "../date-picker.tsx";
 
 export default function DefaultInputs() {
   const [showPassword, setShowPassword] = useState(false);
-  const options = [
-    { value: "marketing", label: "Marketing" },
-    { value: "template", label: "Template" },
-    { value: "development", label: "Development" },
-  ];
-  const handleSelectChange = (value: string) => {
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
     console.log("Selected value:", value);
   };
 
@@ -30,12 +26,10 @@ export default function DefaultInputs() {
         </div>
         <div>
           <Label>Select Input</Label>
-          <Select
-            options={options}
-            placeholder="Select an option"
-            onChange={handleSelectChange}
-            className="dark:bg-dark-900"
-          />
+          <Select onChange={handleSelectChange}>
+            <option value="development">Development</option>
+            <option value="production">Production</option>
+          </Select>
         </div>
         <div>
           <Label>Password Input</Label>

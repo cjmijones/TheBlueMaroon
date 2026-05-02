@@ -1,6 +1,7 @@
 import { useState }         from "react";
 import { useFractionalize } from "../../hooks/useFractionalize";
 import Button               from "../ui/button/Button";
+import InputField from "../form/input/InputField";
 
 export default function FractionalizeCard() {
   const { mutateAsync, isPending, error } = useFractionalize();
@@ -37,26 +38,16 @@ export default function FractionalizeCard() {
 
         <div className="grid gap-4 sm:grid-cols-3">
           {/* NFT contract */}
-          <input name="nft" placeholder="NFT Contract" required disabled={disabled}
-            className="col-span-2 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm
-                       dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" />
+          <InputField name="nft" placeholder="NFT Contract" required disabled={disabled} className="col-span-2 w-full" />
 
           {/* tokenId */}
-          <input name="tokenId" type="number" placeholder="ID" required disabled={disabled}
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm
-                       dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" />
+          <InputField name="tokenId" type="number" placeholder="ID" required disabled={disabled} className="w-full" />
 
           {/* shares */}
-          <input name="shares" type="number" placeholder="Shares" required disabled={disabled}
-            className="col-span-3 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm
-                       dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" />
+          <InputField name="shares" type="number" placeholder="Shares" required disabled={disabled} className="col-span-3 w-full" />
 
           {/* fixed-price round */}
-          <input type="number" step="0.01" min="0" value={price}
-                 onChange={(e) => setPrice(parseFloat(e.target.value))}
-                 placeholder="Offering Price (optional)"
-                 className="col-span-3 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm
-                            dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" />
+          <InputField type="number" step="0.01" min="0" value={price} onChange={e => setPrice(parseFloat(e.target.value))} placeholder="Offering Price (optional)" className="col-span-3 w-full" />
         </div>
 
         <Button type="submit" disabled={disabled} className="w-full sm:w-auto">

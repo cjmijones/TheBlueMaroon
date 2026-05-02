@@ -2,6 +2,8 @@
 import { useState }   from "react";
 import { useMintNft } from "../../hooks/useMintNft";
 import Button         from "../ui/button/Button";
+import InputField from "../form/input/InputField";
+import FileInput from "../form/input/FileInput";
 
 export default function MintNftCard() {
   const { mutateAsync, isPending, isReady, errorMsg } = useMintNft();
@@ -35,44 +37,31 @@ export default function MintNftCard() {
         {/* -------------------- inputs -------------------- */}
         <div className="grid gap-4 sm:grid-cols-2">
           {/* name */}
-          <input
+          <InputField
             name="name"
             placeholder="Name"
             required
             disabled={!isReady || isPending}
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm
-                       text-gray-700 placeholder-gray-400 shadow-theme-xs
-                       focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none
-                       disabled:cursor-not-allowed disabled:opacity-50
-                       dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500"
+            className="w-full"
           />
 
           {/* description */}
-          <input
+          <InputField
             name="description"
             placeholder="Description"
             required
             disabled={!isReady || isPending}
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm
-                       text-gray-700 placeholder-gray-400 shadow-theme-xs
-                       focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none
-                       disabled:cursor-not-allowed disabled:opacity-50
-                       dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500"
+            className="w-full"
           />
 
           {/* image file picker (spans both columns) */}
-          <input
-            type="file"
+          <FileInput
+            name="image"
             accept="image/*"
             required
             onChange={(e) => setFile(e.target.files?.[0])}
             disabled={!isReady || isPending}
-            className="col-span-2 w-full cursor-pointer rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm
-                       text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-primary-600 file:px-4
-                       file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-primary-700
-                       focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none
-                       disabled:cursor-not-allowed disabled:opacity-50
-                       dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+            className="col-span-2 w-full"
           />
         </div>
 
