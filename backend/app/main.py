@@ -90,14 +90,19 @@ app.include_router(api_router)
 # ────────────────────────────────
 SPA_DIR = Path(__file__).parent.parent / "frontend" / "dist"
 ASSET_DIR = SPA_DIR / "assets"
+SPA_INDEX = SPA_DIR / "index.html"
+SPA_AVAILABLE = SPA_INDEX.exists() and ASSET_DIR.exists()
 
 # 1) serve real static files
-app.mount("/assets", StaticFiles(directory=ASSET_DIR), name="assets")
+if SPA_AVAILABLE:
+    app.mount("/assets", StaticFiles(directory=ASSET_DIR), name="assets")
 
 # 2) root path -> index.html
 @app.get("/", include_in_schema=False)
 async def spa_root():
-    return FileResponse(SPA_DIR / "index.html")
+    if SPA_AVAILABLE:
+        return FileResponse(SPA_INDEX)
+    return {"status": "api_only", "docs": "/docs", "health": "/api/health"}
 
 # 3) catch-all (everything that is NOT /api/* or /assets/*)
 @app.get("/{full_path:path}", include_in_schema=False)
@@ -106,7 +111,9 @@ async def spa_fallback(full_path: str, request: Request):
     # Let API routes error normally if someone mis-routes
     if full_path.startswith("api"):
         raise HTTPException(status_code=404)
-    return FileResponse(SPA_DIR / "index.html")
+    if not SPA_AVAILABLE:
+        raise HTTPException(status_code=404)
+    return FileResponse(SPA_INDEX)
 
 # local dev entry-point
 if __name__ == "__main__":

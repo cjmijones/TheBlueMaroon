@@ -1,5 +1,5 @@
 export type UserProfile = {
-  user_id: string;            // matches `id` (Auth0 sub)
+  user_id: string;            // matches `id` (Supabase auth user id)
   name: string;
   email: string;
   picture: string;

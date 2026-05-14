@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from functools import lru_cache
 from typing import List, Optional
 
@@ -11,22 +12,29 @@ class Settings(BaseSettings):
     debug:   bool = False
     allowed_hosts: List[str] = ["*"]
 
-    # ──────────────────  Auth0  ───────────────────
+    # ──────────────────  Legacy Auth0  ───────────────────
     public_base_url: str | None = "http://localhost:8000"
 
-    # ──────────────────  Auth0  ───────────────────
-    secret_key: str
-    auth0_domain: str
-    auth0_audience: str
-    auth0_client_id: str
-    auth0_client_secret: str
-    auth0_m2m_client_id: str
-    auth0_m2m_client_secret: str
-    auth0_sync_hmac: str
+    # ──────────────────  Legacy Auth0  ───────────────────
+    secret_key: str | None = None
+    auth0_domain: str | None = None
+    auth0_audience: str | None = None
+    auth0_client_id: str | None = None
+    auth0_client_secret: str | None = None
+    auth0_m2m_client_id: str | None = None
+    auth0_m2m_client_secret: str | None = None
+    auth0_sync_hmac: str | None = None
     auth0_token_url: str = ""
-    algorithms: List[str] = ["RS256"]
+    algorithms: List[str] = ["RS256", "ES256"]
     auth0_siwe_connection: str = "siwe"
-    auth0_allowed_chains: List[int]
+    auth0_allowed_chains: List[int] = [11155111, 1]
+
+    # ──────────────────  Supabase Auth  ───────────────────
+    supabase_url: str | None = None
+    supabase_jwks_url: str | None = None
+    supabase_jwt_secret: str | None = None
+    supabase_jwt_issuer: str | None = None
+    supabase_jwt_audience: str = "authenticated"
 
     # ──────────────────  Didit  ───────────────────
     didit_client_id: str
@@ -62,6 +70,17 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         extra = "allow"
+
+    @field_validator("debug", mode="before")
+    @classmethod
+    def parse_debug(cls, value):
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"release", "prod", "production"}:
+                return False
+            if normalized in {"debug", "dev", "development"}:
+                return True
+        return value
 
     # Helper to choose neon vs prod
     def get_db_url(self) -> str:

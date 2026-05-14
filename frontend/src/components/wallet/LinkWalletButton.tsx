@@ -1,21 +1,16 @@
 // LinkWalletButton.tsx
 import { useAccount, useSignMessage, useChainId, useEnsName } from 'wagmi';
-import { useAuth0 } from '@auth0/auth0-react';
 import { SiweMessage } from 'siwe';
-import axios from 'axios';
 import { useRef, useState } from 'react';
 import { useWallets } from '../../hooks/useWalletAPI';
 import { Buffer } from 'buffer/';                 // polyfill
+import { api } from '../../lib/api';
+import { useSupabaseAuth } from '../../providers/SupabaseAuthProvider';
 
 if (typeof globalThis.Buffer === 'undefined') {
   // @ts-expect-error browser polyfill
   globalThis.Buffer = Buffer;
 }
-
-const apiBaseURL =
-  import.meta.env.VITE_ENV_TYPE === 'prod'
-    ? `${import.meta.env.VITE_API_PROD_URL}/api`
-    : `${import.meta.env.VITE_API_DEV_URL}/api`;
 
 export default function LinkWalletButton() {
   /* ── wagmi + ENS ─────────────────────────── */
@@ -28,8 +23,8 @@ export default function LinkWalletButton() {
     query   : { enabled: !!address && chainId === 1 },
   });
 
-  /* ── Auth0 + wallet API hook ─────────────── */
-  const { getAccessTokenSilently } = useAuth0();
+  /* ── Supabase + wallet API hook ─────────────── */
+  const { getAccessToken } = useSupabaseAuth();
   const { add }                    = useWallets();     // we will use mutateAsync ⬇
 
   /* ── local state ─────────────────────────── */
@@ -46,16 +41,14 @@ export default function LinkWalletButton() {
       if (nonceRef.current) return;        // guard: already in-flight
       setStatus('sig');
 
-      /* 1️⃣  Auth0 token */
-      const token = await getAccessTokenSilently();
-      if (!token) throw new Error('Missing Auth0 token');
+      /* 1️⃣  Supabase access token */
+      const token = await getAccessToken();
+      if (!token) throw new Error('Missing Supabase access token');
 
       /* 2️⃣  nonce from server (re-use if still set) */
-      const { data } = await axios.post(
-        `${apiBaseURL}/wallets/nonce`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const { data } = await api.post("/wallets/nonce", {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       nonceRef.current = data.nonce as string;
 
       /* 3️⃣  build SIWE message */

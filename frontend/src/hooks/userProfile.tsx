@@ -1,12 +1,11 @@
 // hooks/userProfile.tsx
-import { useAuth0 } from "@auth0/auth0-react";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { UserProfile } from "../types";
-import { jwtDecode } from "jwt-decode";
+import { api } from "../lib/api";
+import { useSupabaseAuth } from "../providers/SupabaseAuthProvider";
 
 export function useUserProfile(): UserProfile | null {
-  const { isAuthenticated, getAccessTokenSilently } = useAuth0();
+  const { isAuthenticated, getAccessToken } = useSupabaseAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
@@ -14,16 +13,8 @@ export function useUserProfile(): UserProfile | null {
       if (!isAuthenticated) return;
 
       try {
-        const token = await getAccessTokenSilently({
-          authorizationParams: {
-            audience: `${import.meta.env.VITE_AUTH0_AUDIENCE}`,
-            scope: "openid profile email",
-          },
-        });
-
-        console.log("🔐User getAccessTokenSilently in User Profile Hook Call", jwtDecode(token));
-
-        const response = await axios.get(`${import.meta.env.VITE_API_DEV_URL}/api/me`, {
+        const token = await getAccessToken();
+        const response = await api.get("/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -34,7 +25,7 @@ export function useUserProfile(): UserProfile | null {
     };
 
     fetchProfile();
-  }, [isAuthenticated, getAccessTokenSilently]);
+  }, [isAuthenticated, getAccessToken]);
 
   return profile;
 }

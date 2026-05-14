@@ -1,29 +1,27 @@
 import { PropsWithChildren, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useAuth0 } from "@auth0/auth0-react";
 
 import {
 //   api,                       // exported in case you need direct access
   attachAuthHeader,
   wireGlobalErrorHandler,
 } from "../lib/api";
+import { useSupabaseAuth } from "./SupabaseAuthProvider";
 
 const queryClient = new QueryClient();
 
 /**
- * Bridges React-world hooks (Auth0, React-Query) with Axios interceptors.
- * Place **inside** <Auth0Provider>, **above** your app’s router / UI.
+ * Bridges React-world hooks (Supabase, React-Query) with Axios interceptors.
+ * Place inside <SupabaseAuthProvider>, above your app router / UI.
  */
 export function ApiProvider({ children }: PropsWithChildren) {
-  const { getAccessTokenSilently } = useAuth0();
+  const { getAccessToken } = useSupabaseAuth();
 
   useEffect(() => {
     /* Attach interceptors exactly once (they are idempotent) */
-    attachAuthHeader(() =>
-      getAccessTokenSilently().catch(() => undefined),
-    );
+    attachAuthHeader(() => getAccessToken().catch(() => undefined));
     wireGlobalErrorHandler(queryClient);
-  }, [getAccessTokenSilently]);
+  }, [getAccessToken]);
 
   return (
     <QueryClientProvider client={queryClient}>

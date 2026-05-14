@@ -1,55 +1,85 @@
 # app/auth/deps.py
-import json, time, asyncio, httpx
-from functools import lru_cache
+import os
+import time
 from urllib.parse import urljoin
+
+import httpx
 from jose import jwt
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from redis.asyncio import Redis
+from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, insert, update
 from datetime import datetime
 
 from app.db.session import get_db
 from app.models.user import User
 from app.core.config import get_settings
 
-import os
-from redis.asyncio import Redis
-
 settings = get_settings()
-
-AUTH0_DOMAIN = settings.auth0_domain
-AUTH0_AUDIENCE = settings.auth0_audience
-AUTH0_ALGORITHMS = settings.algorithms
-
 bearer_scheme = HTTPBearer()
 
-JWKS_URL = urljoin(f"https://{AUTH0_DOMAIN}", "/.well-known/jwks.json")
+
+def _supabase_jwks_url() -> str:
+    if settings.supabase_jwks_url:
+        return settings.supabase_jwks_url
+    if not settings.supabase_url:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Supabase auth is not configured",
+        )
+    return urljoin(settings.supabase_url.rstrip("/") + "/", "auth/v1/.well-known/jwks.json")
 
 
-@lru_cache(maxsize=1)
+def _supabase_issuer() -> str | None:
+    if settings.supabase_jwt_issuer:
+        return settings.supabase_jwt_issuer
+    if settings.supabase_url:
+        return urljoin(settings.supabase_url.rstrip("/") + "/", "auth/v1")
+    return None
+
+
 def _jwks():
-    """Fetch & cache Auth0's public keys (5-min TTL)."""
+    """Fetch and cache Supabase public JWT keys for 5 minutes."""
     ttl_key = "_fetched_at"
     if ttl_key in _jwks.__dict__ and time.time() - _jwks.__dict__[ttl_key] < 300:
         return _jwks.__dict__["jwks"]
-    resp = httpx.get(JWKS_URL, timeout=10)
+
+    resp = httpx.get(_supabase_jwks_url(), timeout=10)
     resp.raise_for_status()
     _jwks.__dict__.update(jwks=resp.json(), _fetched_at=time.time())
     return _jwks.__dict__["jwks"]
 
 
 def _decode_token(token: str):
+    """Decode a Supabase Auth access token."""
+    if settings.supabase_jwt_secret:
+        return jwt.decode(
+            token,
+            settings.supabase_jwt_secret,
+            algorithms=["HS256"],
+            audience=settings.supabase_jwt_audience,
+        )
+
     unverified = jwt.get_unverified_header(token)
-    kid = unverified["kid"]
-    key = next(k for k in _jwks()["keys"] if k["kid"] == kid)
-    return jwt.decode(
-        token,
-        key,
-        algorithms=AUTH0_ALGORITHMS,
-        audience=AUTH0_AUDIENCE,
-        issuer=f"https://{AUTH0_DOMAIN}/",
-    )
+    kid = unverified.get("kid")
+    keys = _jwks().get("keys", [])
+    key = next((candidate for candidate in keys if candidate.get("kid") == kid), None)
+    if not key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unable to find matching Supabase signing key",
+        )
+
+    decode_kwargs = {
+        "algorithms": settings.algorithms,
+        "audience": settings.supabase_jwt_audience,
+    }
+    issuer = _supabase_issuer()
+    if issuer:
+        decode_kwargs["issuer"] = issuer
+
+    return jwt.decode(token, key, **decode_kwargs)
 
 
 async def get_current_user(
@@ -58,40 +88,53 @@ async def get_current_user(
 ) -> User:
     try:
         payload = _decode_token(creds.credentials)
-        print("🔐 JWT payload:", json.dumps(payload, indent=2))
     except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail="Invalid or expired token") from exc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        ) from exc
 
-    sub      = payload["sub"]                     # Auth0 user id
-    email    = payload.get("https://api.thebluemaroon.local/email")
-    name     = payload.get("https://api.thebluemaroon.local/name")
-    picture  = payload.get("https://api.thebluemaroon.local/picture")
-    created_at  = payload.get("https://api.thebluemaroon.local/created_at")
-    now      = datetime.utcnow()
+    sub = payload["sub"]
+    email = payload.get("email")
+    user_metadata = payload.get("user_metadata") or {}
+    name = (
+        user_metadata.get("name")
+        or user_metadata.get("full_name")
+        or payload.get("name")
+        or email
+    )
+    picture = (
+        user_metadata.get("picture")
+        or user_metadata.get("avatar_url")
+        or payload.get("picture")
+    )
+    now = datetime.utcnow()
 
-    # ➊ try to fetch
     result = await db.execute(select(User).where(User.id == sub))
     user = result.scalar_one_or_none()
 
     if user:
-        # ➋ update last_login **in‑place** if >5 min old
+        updates = {}
+        if email and user.email != email:
+            updates["email"] = email
+        if name and user.name != name:
+            updates["name"] = name
+        if picture and user.picture != picture:
+            updates["picture"] = picture
         if not user.last_login or (now - user.last_login).seconds > 300:
-            await db.execute(
-                update(User)
-                .where(User.id == sub)
-                .values(last_login=now)
-            )
+            updates["last_login"] = now
+
+        if updates:
+            await db.execute(update(User).where(User.id == sub).values(**updates))
             await db.commit()
         return user
 
-    # ➌ new user → insert
     await db.execute(
         insert(User).values(
             id=sub,
             email=email,
             name=name,
-            picture=picture,    
+            picture=picture,
             created_at=now,
             last_login=now,
         )
@@ -102,8 +145,13 @@ async def get_current_user(
 
 async def exchange_refresh_token(refresh_token: str) -> dict:
     """
-    Exchange a refresh token for a new access token via Auth0.
+    Legacy Auth0 helper. Supabase refresh is handled client-side by supabase-js.
     """
+    if not settings.auth0_domain or not settings.auth0_client_id or not settings.auth0_client_secret:
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail="Auth0 refresh tokens are no longer configured",
+        )
 
     token_url = f"https://{settings.auth0_domain}/oauth/token"
     data = {
@@ -113,7 +161,6 @@ async def exchange_refresh_token(refresh_token: str) -> dict:
         "refresh_token": refresh_token,
     }
 
-    print("🔧 token‑url →", settings.auth0_token_url)
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.post(token_url, data=data)
 

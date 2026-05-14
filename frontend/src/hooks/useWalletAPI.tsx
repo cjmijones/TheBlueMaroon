@@ -1,17 +1,17 @@
 // useWalletsAPI.tsx
-import { useAuth0 } from "@auth0/auth0-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { WalletCreate } from "../types";  // ✅ Import the type
 import { api } from "../lib/api";   
+import { useSupabaseAuth } from "../providers/SupabaseAuthProvider";
 
 export function useWallets() {
-  const { getAccessTokenSilently } = useAuth0();
+  const { getAccessToken } = useSupabaseAuth();
   const queryClient = useQueryClient();
 
   const list = useQuery({
     queryKey: ["wallets"],
     queryFn: async () => {
-      const token = await getAccessTokenSilently();
+      const token = await getAccessToken();
       const { data } = await api.get("/wallets/", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -27,7 +27,7 @@ export function useWallets() {
 
   const add = useMutation({
     mutationFn: async (payload: WalletCreate) => {
-      const token = await getAccessTokenSilently();
+      const token = await getAccessToken();
       await api.post("/wallets/", payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -39,7 +39,7 @@ export function useWallets() {
 
   const remove = useMutation({
     mutationFn: async (address: string) => {
-      const token = await getAccessTokenSilently();
+      const token = await getAccessToken();
       await api.delete(`/wallets/${address}`, {
         headers: { Authorization: `Bearer ${token}` },
       });

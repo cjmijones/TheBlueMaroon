@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import { useUserProfile } from "../hooks/userProfile.tsx";
-import axios from "axios";
+import { api } from "../lib/api";
+import { useSupabaseAuth } from "../providers/SupabaseAuthProvider";
 
 export default function Testboard() {
-  const { logout, getAccessTokenSilently } = useAuth0();
+  const { signOut, getAccessToken } = useSupabaseAuth();
   
   // This hook is where the /me route is called using the auth token;
   // This is what populates the FastApi logs with the 🔐 JWT payload: 
@@ -23,9 +23,9 @@ export default function Testboard() {
 
   const updateUsername = async () => {
     try {
-      const token = await getAccessTokenSilently();
-      await axios.post(
-        `${import.meta.env.VITE_API_DEV_URL}/api/me/update-username`,
+      const token = await getAccessToken();
+      await api.post(
+        "/me/update-username",
         { username: newUsername },
         {
           headers: {
@@ -39,7 +39,7 @@ export default function Testboard() {
       setNewUsername("");
       window.location.reload(); // reload to re-trigger useUserProfile
     } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response?.data?.detail === "Username already taken") {
+      if (typeof err === "object" && err !== null && "response" in err) {
         setError("❌ That username is already taken.");
       } else {
         setError("⚠️ Failed to update username.");
@@ -155,7 +155,7 @@ export default function Testboard() {
       )}
 
       <button
-        onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
+        onClick={() => void signOut()}
         style={{
           padding: "0.5rem 1rem",
           backgroundColor: "#c0392b",

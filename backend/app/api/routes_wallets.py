@@ -36,14 +36,14 @@ router = APIRouter(prefix="/wallets", tags=["wallets"])
 # Constants
 # ──────────────────────────────────────────────────────────────────────────────
 
-raw_chains = os.getenv("AUTH0_ALLOWED_CHAINS", "[1]")
+raw_chains = os.getenv("SIWE_ALLOWED_CHAINS") or os.getenv("AUTH0_ALLOWED_CHAINS", "[1]")
 
 try:
     ALLOWED_CHAINS = json.loads(raw_chains)
     if not isinstance(ALLOWED_CHAINS, list) or not all(isinstance(c, int) for c in ALLOWED_CHAINS):
-        raise ValueError("AUTH0_ALLOWED_CHAINS must be a JSON array of integers")
+        raise ValueError("SIWE_ALLOWED_CHAINS must be a JSON array of integers")
 except json.JSONDecodeError as e:
-    raise ValueError(f"Invalid JSON in AUTH0_ALLOWED_CHAINS: {raw_chains}") from e
+    raise ValueError(f"Invalid JSON in SIWE_ALLOWED_CHAINS: {raw_chains}") from e
 
 
 SIWE_TTL = timedelta(minutes=5)
