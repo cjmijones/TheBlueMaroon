@@ -4,8 +4,10 @@ import json, shutil, uuid
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, HTTPException
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
-from app.auth.deps   import get_current_user
+from app.auth.deps   import get_current_user, get_db
+from app.models import AppAsset
 
 settings = get_settings()
 router   = APIRouter(prefix="/nfts", tags=["nfts"])
@@ -17,6 +19,9 @@ router   = APIRouter(prefix="/nfts", tags=["nfts"])
 class MetadataIn(BaseModel):
     name:        str = Field(..., max_length=80, strip_whitespace=True)
     description: str = Field(..., max_length=5_000, strip_whitespace=True)
+    chain_id: int | None = None
+    nft_contract: str | None = Field(None, pattern=r"^0x[a-fA-F0-9]{40}$")
+    owner_wallet_address: str | None = Field(None, pattern=r"^0x[a-fA-F0-9]{40}$")
 
     # turn every field into Form(...) so FastAPI binds it from multipart
     @classmethod
@@ -24,8 +29,25 @@ class MetadataIn(BaseModel):
         cls,
         name:        str = Form(...),
         description: str = Form(...),
+        chain_id: int | None = Form(None),
+        nft_contract: str | None = Form(None),
+        owner_wallet_address: str | None = Form(None),
     ):
-        return cls(name=name, description=description)
+        return cls(
+            name=name,
+            description=description,
+            chain_id=chain_id,
+            nft_contract=nft_contract,
+            owner_wallet_address=owner_wallet_address,
+        )
+
+
+class MintedAssetIn(BaseModel):
+    tx_hash: str = Field(..., pattern=r"^0x[a-fA-F0-9]{64}$")
+    token_id: str | None = None
+    nft_contract: str | None = Field(None, pattern=r"^0x[a-fA-F0-9]{40}$")
+    owner_wallet_address: str | None = Field(None, pattern=r"^0x[a-fA-F0-9]{40}$")
+    chain_id: int | None = None
 
 
 # ──────────────────────────────
@@ -36,6 +58,7 @@ async def upload_metadata(
     request: Request,
     image:   UploadFile               = File(...),
     payload: MetadataIn               = Depends(MetadataIn.as_form),
+    db: AsyncSession                   = Depends(get_db),
     user     = Depends(get_current_user),
 ):
     """
@@ -66,4 +89,57 @@ async def upload_metadata(
         "image":       image_url,
     }))
 
-    return {"token_uri": token_uri, "image_url": image_url}
+    app_asset = AppAsset(
+        creator_id=user.id,
+        owner_wallet_address=payload.owner_wallet_address.lower() if payload.owner_wallet_address else None,
+        chain_id=payload.chain_id,
+        nft_contract=payload.nft_contract.lower() if payload.nft_contract else None,
+        title=payload.name,
+        description=payload.description,
+        metadata_uri=token_uri,
+        image_url=image_url,
+        status="metadata_ready",
+    )
+    db.add(app_asset)
+    await db.commit()
+    await db.refresh(app_asset)
+
+    return {
+        "asset_id": app_asset.id,
+        "token_uri": token_uri,
+        "image_url": image_url,
+    }
+
+
+@router.patch("/assets/{asset_id}/minted")
+async def mark_asset_minted(
+    asset_id: int,
+    payload: MintedAssetIn,
+    db: AsyncSession = Depends(get_db),
+    user = Depends(get_current_user),
+):
+    app_asset = await db.get(AppAsset, asset_id)
+    if not app_asset or app_asset.creator_id != user.id:
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+    app_asset.status = "mint_submitted"
+    app_asset.mint_tx_hash = payload.tx_hash.lower()
+    if payload.token_id is not None:
+        app_asset.token_id = payload.token_id
+        app_asset.status = "minted"
+    if payload.nft_contract:
+        app_asset.nft_contract = payload.nft_contract.lower()
+    if payload.owner_wallet_address:
+        app_asset.owner_wallet_address = payload.owner_wallet_address.lower()
+    if payload.chain_id:
+        app_asset.chain_id = payload.chain_id
+
+    await db.commit()
+    await db.refresh(app_asset)
+
+    return {
+        "id": app_asset.id,
+        "status": app_asset.status,
+        "mint_tx_hash": app_asset.mint_tx_hash,
+        "token_id": app_asset.token_id,
+    }

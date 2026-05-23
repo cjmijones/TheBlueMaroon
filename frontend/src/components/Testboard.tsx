@@ -4,7 +4,7 @@ import { api } from "../lib/api";
 import { useSupabaseAuth } from "../providers/SupabaseAuthProvider";
 
 export default function Testboard() {
-  const { signOut, getAccessToken } = useSupabaseAuth();
+  const { signOut } = useSupabaseAuth();
   
   // This hook is where the /me route is called using the auth token;
   // This is what populates the FastApi logs with the 🔐 JWT payload: 
@@ -23,16 +23,7 @@ export default function Testboard() {
 
   const updateUsername = async () => {
     try {
-      const token = await getAccessToken();
-      await api.post(
-        "/me/update-username",
-        { username: newUsername },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await api.post("/me/update-username", { username: newUsername });
       setError("");
       setSuccess("Username updated successfully.");
       setEditingUsername(false);

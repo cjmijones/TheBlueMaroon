@@ -12,13 +12,14 @@ import { CHAINS }           from "../lib/addresses";
 import { useChain }         from "../context/ChainContext";
 
 interface MintResp {
+  asset_id: number;
   token_uri: string;
   image_url: string;
 }
 
 export function useMintNft() {
   /* Wallet & network ---------------------------------------------- */
-  const { isConnected }        = useAccount();
+  const { address, isConnected } = useAccount();
   const chainId                = useChainId();
   const { switchChainAsync }   = useSwitchChain();
   const ctxChainId             = useChain();          // default from <ChainContext>
@@ -51,6 +52,10 @@ export function useMintNft() {
         await switchChainAsync({ chainId: targetChainId });
       }
 
+      form.set("chain_id", String(targetChainId));
+      form.set("nft_contract", nftAddress!);
+      if (address) form.set("owner_wallet_address", address);
+
       /* 1. Upload metadata */
       const { data } = await api.post<MintResp>("/nfts/metadata", form, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -64,6 +69,32 @@ export function useMintNft() {
         args:         [data.token_uri],
         chainId:      targetChainId,
       });
+
+      try {
+        await api.post("/transactions/", {
+          hash: txHash,
+          wallet_address: address,
+          chain_id: targetChainId,
+          method: "mint_nft",
+          status: "submitted",
+          payload_json: {
+            asset_id: data.asset_id,
+            nft_contract: nftAddress,
+            token_uri: data.token_uri,
+            image_url: data.image_url,
+          },
+        });
+
+        await api.patch(`/nfts/assets/${data.asset_id}/minted`, {
+          tx_hash: txHash,
+          owner_wallet_address: address,
+          chain_id: targetChainId,
+          nft_contract: nftAddress,
+        });
+      } catch (recordErr) {
+        console.warn("Mint submitted, but app bookkeeping failed", recordErr);
+        toast.warning("Mint submitted, but app history was not updated.");
+      }
 
       /* 3. UX toast */
       const explorer = targetChainId === 11155111

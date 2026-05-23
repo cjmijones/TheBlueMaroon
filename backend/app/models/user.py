@@ -32,6 +32,12 @@ class User(Base):
         cascade="all, delete-orphan",
     )
 
+    app_assets = relationship(
+        "AppAsset",
+        back_populates="creator",
+        cascade="all, delete-orphan",
+    )
+
     verification = relationship(                    # one-to-one
         "UserVerification",
         back_populates="user",

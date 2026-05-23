@@ -31,10 +31,10 @@ async def create_fractional_listing(
             """
             INSERT INTO fractional_listings
               (creator_id, vault, nft_contract, token_id, shares,
-               chain_id, round_price, created_at, expires_at)
+               chain_id, round_price, status, created_at, expires_at, updated_at)
             VALUES
               (:creator_id, NULL, :nft, :token, :shares,
-               :chain, :price, NOW(), NOW() + INTERVAL '7 days')
+               :chain, :price, 'draft', NOW(), NOW() + INTERVAL '7 days', NOW())
             """
         ),
         {
@@ -80,6 +80,7 @@ async def finalize_fractional_listing(
             FROM   fractional_listings
             WHERE  creator_id = :creator
               AND  vault IS NULL
+              AND  COALESCE(status, 'draft') = 'draft'
             ORDER  BY created_at DESC
             LIMIT  1
             """

@@ -1,20 +1,15 @@
 // useWalletsAPI.tsx
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { WalletCreate } from "../types";  // ✅ Import the type
-import { api } from "../lib/api";   
-import { useSupabaseAuth } from "../providers/SupabaseAuthProvider";
+import { WalletCreate } from "../types";
+import { api } from "../lib/api";
 
 export function useWallets() {
-  const { getAccessToken } = useSupabaseAuth();
   const queryClient = useQueryClient();
 
   const list = useQuery({
     queryKey: ["wallets"],
     queryFn: async () => {
-      const token = await getAccessToken();
-      const { data } = await api.get("/wallets/", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { data } = await api.get("/wallets/");
       return data as {
         address: string;
         chain_id: number;
@@ -27,25 +22,21 @@ export function useWallets() {
 
   const add = useMutation({
     mutationFn: async (payload: WalletCreate) => {
-      const token = await getAccessToken();
-      await api.post("/wallets/", payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.post("/wallets/", payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wallets"] });
+      queryClient.invalidateQueries({ queryKey: ["portfolio"] });
     },
   });
 
   const remove = useMutation({
     mutationFn: async (address: string) => {
-      const token = await getAccessToken();
-      await api.delete(`/wallets/${address}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/wallets/${address}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wallets"] });
+      queryClient.invalidateQueries({ queryKey: ["portfolio"] });
     },
   });
 

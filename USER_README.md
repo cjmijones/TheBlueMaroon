@@ -8,28 +8,28 @@ The repo is a full-stack Web3 commerce MVP:
 
 | Area | Location | What it does |
 | --- | --- | --- |
-| FastAPI backend | `backend/app` | Supabase-protected API, wallet linking, NFT metadata upload, Alchemy asset reads, fractional listing records, KYC integration, metrics. |
-| React frontend | `frontend` | Vite + React app with Supabase login, dashboard routes, React Query, RainbowKit/wagmi wallet flows, mock marketplace/portfolio pages. |
+| FastAPI backend | `backend/app` | Supabase-protected API, wallet linking, NFT metadata upload, app-created asset tracking, app transaction history, Alchemy asset reads, fractional listing records, KYC integration, metrics. |
+| React frontend | `frontend` | Vite + React app with Supabase login, dashboard routes, React Query, RainbowKit/wagmi wallet flows, live wallet/portfolio surfaces, and mock marketplace/trading pages. |
 | Solidity contracts | `contracts`, `hardhat.config.ts`, `scripts/deploy.ts` | ERC-721 minting contract, fractional vault implementation, clone factory, ABI export to frontend/backend. |
 | Docker ops | `Dockerfile`, `backend/ops/docker-compose.yml` | Builds one combined React + FastAPI image and starts local backing services/observability. |
 | Planning/docs | `project-planning`, `README.md` | Architecture notes and older project documentation. Some old text has encoding artifacts. |
 
 At runtime there are two main application shapes:
 
-1. Local split-dev mode: React runs with Vite on port `5173`; FastAPI runs on port `8000`; the frontend calls the backend with `VITE_API_DEV_URL=http://localhost:8000`.
+1. Local split-dev mode: React runs with Vite on port `5173`; FastAPI runs on port `8000`; Vite proxies `/api` to the backend. `VITE_API_DEV_URL` is optional and can still point directly at `http://localhost:8000` if you want to bypass the proxy.
 2. Docker single-image mode: the Dockerfile builds the React SPA, copies `frontend/dist` into the FastAPI image, and FastAPI serves both `/api/*` and the compiled SPA from port `8000`.
 
 ## Port Map
 
 | Service | Port | How it starts | Notes |
 | --- | ---: | --- | --- |
-| Vite frontend | `5173` | `cd frontend; npm run dev` | Local development only. No Vite proxy is configured, so set `VITE_API_DEV_URL`. |
+| Vite frontend | `5173` | `cd frontend; npm run dev` | Local development only. Proxies `/api` to `http://localhost:8000`. |
 | FastAPI backend | `8000` | `uvicorn app.main:app --reload --port 8000` or Docker | API under `/api/*`; Docker also serves the compiled React SPA at `/`. |
 | Docker app | `8000` | `docker compose up --build` from `backend/ops` | Combined frontend/backend image. |
 | Redis | `6379` | Docker compose | Used for SIWE nonce caching. Published to host by compose. |
 | Postgres | `5432` internal | Docker compose | No host port is published currently. App reaches it as `postgres:5432` inside compose network. |
 | Grafana | `3000` | Docker compose | Uses `GRAFANA_USER` / `GRAFANA_PASSWORD`, defaults to admin/admin. |
-| Prometheus | `9090` | Docker compose | Scrapes FastAPI metrics, but current target likely needs correction. |
+| Prometheus | `9090` | Docker compose | Scrapes FastAPI metrics from `app:8000`. |
 | Loki | `3100` | Docker compose | Receives logs from Promtail. |
 | Hardhat local node | `8545` | `npx hardhat node` | Optional if you want a local chain. Current config is oriented around Sepolia/mainnet RPCs. |
 
@@ -91,6 +91,7 @@ PUBLIC_BASE_URL=http://localhost:8000
 Use `SUPABASE_JWKS_URL` for the recommended Supabase signing-keys flow. `SUPABASE_JWT_SECRET` is supported by the backend only as a fallback for legacy shared-secret projects.
 
 For Docker compose, `backend/ops/docker-compose.yml` uses `env_file: ../.env`, which resolves to `backend/.env` when compose is run from `backend/ops`.
+The compose app service overrides `ENV_TYPE=docker` and clears `NEON_DATABASE_URL` so the running app uses the same local Postgres service that the `migrate` container upgrades. Without that override, `ENV_TYPE=dev` makes `backend/app/core/config.py` prefer Neon when `NEON_DATABASE_URL` is present.
 
 ## Install Dependencies
 
@@ -137,6 +138,19 @@ alembic upgrade head
 
 Alembic reads `SYNC_DATABASE_URL` from `backend/.env`. The running FastAPI app reads `DATABASE_URL` or `NEON_DATABASE_URL` through `backend/app/core/config.py`.
 
+Docker compose has a dedicated `migrate` service that runs `alembic upgrade head` before the app starts:
+
+```powershell
+cd backend/ops
+docker compose up --build
+```
+
+For a one-off migration check against the compose database:
+
+```powershell
+docker compose run --rm migrate
+```
+
 In local compose, either point your URLs to the compose service names:
 
 ```text
@@ -146,6 +160,13 @@ REDIS_URL=redis://redis:6379/0
 ```
 
 Or, if running FastAPI on the host against Docker services, publish Postgres in compose and use `localhost`.
+
+The current database boundary is intentionally narrow:
+
+- Store Supabase-backed users, linked wallets, KYC status, app-created assets, app-initiated transaction records, and fractional listing/vault lifecycle rows.
+- Do not store live wallet balances or full wallet NFT inventories. Those are read from RPC/Alchemy when the portfolio needs a refresh.
+- Use `transactions` as an application ledger of actions the app initiated or needs to display, not as a complete block explorer index.
+- Use `app_assets` for creator asset lifecycle before and during minting; use `fractional_listings` when an NFT enters the fractionalization flow.
 
 ## Run Local Development
 
@@ -162,7 +183,7 @@ Open:
 http://localhost:5173
 ```
 
-Set `VITE_API_DEV_URL=http://localhost:8000`. The Vite config does not define a proxy, and some code paths use raw axios with this env var directly.
+The Vite dev server proxies `/api` to `http://localhost:8000`, so `VITE_API_DEV_URL` can be left blank for normal split-dev. If you set `VITE_API_DEV_URL=http://localhost:8000`, the shared API client will call the backend directly at `http://localhost:8000/api`.
 
 ### Backend
 
@@ -238,6 +259,7 @@ The compose file starts:
 | Compose service | Purpose |
 | --- | --- |
 | `app` | Combined FastAPI + compiled React SPA. |
+| `migrate` | One-shot Alembic migration service. Runs before `app`. |
 | `postgres` | Local Postgres database. |
 | `redis` | SIWE nonce cache. |
 | `prometheus` | Metrics scraper. |
@@ -259,12 +281,12 @@ http://localhost:8000/api/health
 
 Docker watch-outs:
 
-- The compose file does not run Alembic migrations. Run `alembic upgrade head` separately or add a migration job/entrypoint step.
-- `backend/prometheus.yml` currently targets `fastapi:8000`, but the compose service is named `app`. Change the target to `app:8000` or rename the service.
+- The compose file now includes a `migrate` service that runs `alembic upgrade head` after Postgres is healthy and before the app starts. It sets `MIGRATION_DATABASE_URL` from the compose Postgres env values so it does not accidentally migrate a remote `SYNC_DATABASE_URL`.
+- `backend/prometheus.yml` targets `app:8000`, matching the compose service name.
 - Postgres is not published to the host. Add `5432:5432` if you want host tools to connect to the compose DB.
-- `depends_on` controls start order, not readiness. Add healthchecks if the app starts before Postgres/Redis are ready.
+- Postgres, Redis, and the app have basic healthchecks. `depends_on` now waits for Postgres/Redis health and migration completion.
 - Uploaded NFT metadata/images are written to a container filesystem path (`media/nfts`). That is ephemeral unless you mount a volume or move uploads to object storage/IPFS.
-- No `.dockerignore` is present. Add one before relying on frequent Docker builds so `node_modules`, virtualenvs, Hardhat artifacts, and other local outputs do not bloat the build context.
+- A root `.dockerignore` keeps local dependencies, build outputs, logs, and env files out of the Docker build context.
 
 ## Backend Architecture
 
@@ -314,8 +336,12 @@ All paths below are prefixed with `/api`.
 | `DELETE /wallets/{address}` | `routes_wallets.py` | Unlinks wallet. |
 | `POST /kyc/start` | `routes_kyc.py` | Creates a Didit verification session for current user. |
 | `POST /kyc/webhook` | `routes_kyc.py` | Receives Didit webhook and updates verification state. |
-| `POST /nfts/metadata` | `routes_nfts.py` | Stores uploaded image/metadata and returns token URI/image URL. |
+| `POST /nfts/metadata` | `routes_nfts.py` | Stores uploaded image/metadata, creates an `app_assets` row, and returns asset/token URI/image URL. |
+| `PATCH /nfts/assets/{asset_id}/minted` | `routes_nfts.py` | Marks an app-created asset as mint submitted/minted after the wallet transaction is sent. |
 | `GET /assets/{address}` | `routes_assets.py` | Fetches NFTs for owner through Alchemy. |
+| `GET /portfolio/me` | `routes_portfolio.py` | Aggregates the current user's wallets, balances, owned NFTs, creator assets, and future position slots. |
+| `POST /transactions/` | `routes_transactions.py` | Records or updates an app-initiated on-chain transaction for the current user. |
+| `GET /transactions/` | `routes_transactions.py` | Lists app-initiated transactions for the current user. |
 | `POST /fractional/` | `routes_fractional.py` | Creates a DB draft before on-chain fractionalization. |
 | `PATCH /fractional/{vault}` | `routes_fractional.py` | Finalizes draft after vault creation transaction succeeds. |
 
@@ -366,9 +392,9 @@ Important frontend modules:
 | `/dashboard` | `pages/Home` | Authenticated landing/dashboard home. Uses mock recent listings. |
 | `/explore` | `pages/Explore` | Marketplace browse page. Uses mock listing hook. |
 | `/asset/:id` | `pages/AssetDetail` | Asset detail page. Uses mock asset hook. |
-| `/portfolio` | `pages/PortfolioDashboard` | Portfolio view. Uses mock positions/withdrawable/sell quote flows. |
+| `/portfolio` | `pages/PortfolioDashboard` | Portfolio view. Uses live wallet balances, Alchemy NFT reads, app asset lifecycle rows, and placeholder future position slots. |
 | `/holding/:id` | `pages/HoldingDetail` | Holding detail/order market view. Uses mock order book/open orders. |
-| `/history` | `pages/TransactionHistory` | Uses mock transaction list. |
+| `/history` | `pages/TransactionHistory` | Lists app-recorded transactions from the backend. |
 | `/web3-commerce` | `pages/Dashboard/Web3Commerce.tsx` | Most live Web3 page: wallet balances, NFT minting, fractionalization, wallet assets. |
 | `/testboard` | `components/Testboard.tsx` | Auth test page for `/api/me` and username update. |
 | `/profile`, `/blank`, UI/chart routes | Various | Template/admin shell pages. |
@@ -378,16 +404,18 @@ Important frontend modules:
 | Frontend hook/component | Backend/API route | Notes |
 | --- | --- | --- |
 | `ApiProvider` + `lib/api.tsx` | All shared `api.*` calls | Attaches Supabase bearer token with an axios request interceptor. |
-| `useUserProfile` | `GET /api/me` | Uses raw axios instead of shared `api`. |
-| `Testboard` | `POST /api/me/update-username` | Uses raw axios. |
+| `useUserProfile` | `GET /api/me` | Uses the shared `api` client. |
+| `Testboard` | `POST /api/me/update-username` | Uses the shared `api` client. |
 | `LinkWalletButton` | `POST /api/wallets/nonce`, then `POST /api/wallets/` | Requests Supabase token, gets nonce, asks wallet to sign SIWE message, posts signature. |
 | `useWallets` | `GET /api/wallets/`, `POST /api/wallets/`, `DELETE /api/wallets/{address}` | Wallet CRUD for authenticated user. |
 | `useWalletBalances` | `GET /api/wallets/{address}/balances` | Combines wagmi native balance with backend token/native aggregate. |
 | `UserAssetsCard` | `GET /api/assets/{address}` | Reads Alchemy NFT inventory through backend. |
-| `useMintNft` + `MintNftCard` | `POST /api/nfts/metadata`, then `BluemaroonNFT.mint` | Backend stores metadata/image, then wallet mints on-chain using returned token URI. |
-| `useFractionalize` + `FractionalizeCard` | `POST /api/fractional/`, `PATCH /api/fractional/{vault}`, plus `VaultFactory` contract calls | Predicts vault, approves NFT, creates DB draft, calls factory, finalizes DB row. |
+| `usePortfolio` | `GET /api/portfolio/me` | Powers the portfolio dashboard with linked wallets, balances, owned NFTs, creator drafts/launched assets, and empty fractional position slots. |
+| `useMintNft` + `MintNftCard` | `POST /api/nfts/metadata`, `POST /api/transactions/`, `PATCH /api/nfts/assets/{asset_id}/minted`, then `BluemaroonNFT.mint` | Backend stores metadata/image and an app asset row; frontend submits the mint and records the app transaction. |
+| `useFractionalize` + `FractionalizeCard` | `POST /api/fractional/`, `PATCH /api/fractional/{vault}`, `POST /api/transactions/`, plus `VaultFactory` contract calls | Predicts vault, approves NFT, creates DB draft, calls factory, records approve/vault transactions, finalizes DB row. |
+| `useTransactions` | `GET /api/transactions/` | Powers the transaction history page with app-recorded on-chain actions. |
 | `useRecentListings`, `useListings`, `useAsset` | None yet | Mock listing/catalog/asset data. |
-| `usePositions`, `usePosition`, `useTransactions` | None yet | Mock portfolio/history data. |
+| `usePositions`, `usePosition` | None yet | Mock portfolio position data. |
 | `useOrderBook`, `useOpenOrders`, `useSellQuote`, `useWithdrawable` | None yet | Mock trading/liquidity data and disabled modal actions. |
 
 ## Smart Contract Flow
@@ -403,18 +431,21 @@ Contracts:
 Mint flow:
 
 1. Frontend uploads metadata/image to `POST /api/nfts/metadata`.
-2. Backend writes files under `media/nfts` and returns a `token_uri`.
+2. Backend writes files under `media/nfts`, creates an `app_assets` lifecycle row, and returns an `asset_id` plus `token_uri`.
 3. Frontend calls `BluemaroonNFT.mint(token_uri)` with the connected wallet.
+4. Frontend records the mint transaction in `POST /api/transactions/`.
+5. Frontend patches `PATCH /api/nfts/assets/{asset_id}/minted` so the creator asset pipeline can show the mint state.
 
 Fractionalization flow:
 
 1. Frontend predicts the vault address with `VaultFactory.predictVault`.
 2. Frontend verifies no bytecode exists at that predicted address.
 3. Frontend approves the predicted vault to transfer the NFT.
-4. Frontend creates a backend draft with `POST /api/fractional/`.
-5. Frontend calls `VaultFactory.createVault`.
-6. Factory clones `FractionalVault`, initializes it, transfers the NFT into the vault, and mints ERC-20 shares.
-7. Frontend patches the backend with `PATCH /api/fractional/{vault}`.
+4. Frontend records the approval transaction in `POST /api/transactions/`.
+5. Frontend creates a backend draft with `POST /api/fractional/`.
+6. Frontend calls `VaultFactory.createVault`.
+7. Factory clones `FractionalVault`, initializes it, transfers the NFT into the vault, and mints ERC-20 shares.
+8. Frontend patches the backend with `PATCH /api/fractional/{vault}` and records the vault transaction.
 
 ## Does The Current Setup Make Sense?
 
@@ -431,9 +462,9 @@ Yes, as an MVP shape, the major pieces are coherent:
 The parts that most need cleanup before future development:
 
 - Local backend startup currently assumes a Docker-style SPA path.
-- Frontend API access is split between the shared axios client and raw axios calls.
-- Many important user-facing pages still use mock data and disabled actions.
-- Docker compose does not run migrations or wait for service health.
+- Frontend API access for the core auth/wallet flows now goes through the shared axios client.
+- Marketplace, holding detail, and trading/liquidity pages still use mock data and disabled actions.
+- Docker compose now runs migrations and has basic health checks; production readiness still needs stronger external dependency checks.
 - Runtime file uploads are local filesystem writes, which are fragile in containers.
 - Tests do not yet cover the real MVP flows.
 
@@ -442,8 +473,8 @@ The parts that most need cleanup before future development:
 1. Fix local backend static serving.
    - Make `main.py` only mount `frontend/dist` if it exists, or resolve the repo-level `frontend/dist` path during local dev.
 
-2. Add a Vite proxy or require `VITE_API_DEV_URL`.
-   - Current `lib/api.tsx` can default to `/api`, but Vite has no proxy, so `/api` on port `5173` will not reach FastAPI.
+2. Keep frontend API access on the shared API client.
+   - Vite now proxies `/api` to FastAPI, and the shared API client attaches Supabase bearer tokens.
 
 3. Unify frontend API calls.
    - Move `useUserProfile`, `Testboard`, and `LinkWalletButton` onto the shared `api` client where practical.
@@ -451,11 +482,11 @@ The parts that most need cleanup before future development:
 4. Deduplicate Python requirements.
    - Root `requirements.txt` and `backend/requirements.txt` differ. Keep one source of truth.
 
-5. Fix compose observability target.
-   - Change Prometheus target from `fastapi:8000` to `app:8000`.
+5. Continue hardening compose.
+   - Prometheus now targets `app:8000`; next improvements would be optional host Postgres publishing and stricter readiness checks for external dependencies.
 
-6. Add migration automation.
-   - Use a Docker entrypoint, separate compose job, or Kubernetes Job for Alembic.
+6. Keep migration automation aligned with deployment.
+   - Docker compose now uses a separate `migrate` service. Kubernetes should use the same idea as a `Job`.
 
 7. Serve uploaded media intentionally.
    - `routes_nfts.py` returns `/media/nfts/...`, but `main.py` does not currently mount `/media`.
@@ -593,13 +624,12 @@ spec:
                 name: blue-maroon-secrets
 ```
 
-Before this job works cleanly, the image likely needs to include `backend/alembic`, `backend/alembic.ini`, and any model imports needed by Alembic. The current Dockerfile only copies `backend/app`.
+The current Dockerfile includes the Alembic directory and `alembic.ini`, so this job can reuse the same image as the app container.
 
 ## Suggested Next Development Order
 
-1. Make local dev boring: fix static serving, Vite proxy/env behavior, dependency duplication, and compose Prometheus target.
-2. Add database migration automation to Docker.
-3. Replace mock marketplace/portfolio/trading hooks with real backend routes one page at a time.
-4. Add backend tests around the route contracts before wiring more frontend UI to them.
-5. Harden production storage and logging: media storage, JWT log sanitization, KYC webhook tests, healthchecks.
-6. Prepare K8s manifests or Helm chart once the Docker path is stable.
+1. Finish local-dev cleanup: dependency duplication, optional Postgres host publishing, media serving, and any static-serving edge cases that still show up.
+2. Replace mock marketplace, holding, and trading hooks with real backend routes one page at a time.
+3. Add backend tests around auth, wallet linking, portfolio aggregation, app transactions, mint bookkeeping, and fractional draft/finalize.
+4. Harden production storage and logging: object storage/IPFS for media, JWT log sanitization, KYC webhook tests, readiness checks.
+5. Prepare K8s manifests or Helm chart once the Docker path is stable.

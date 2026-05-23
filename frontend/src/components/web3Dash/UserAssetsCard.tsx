@@ -1,18 +1,22 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useAccount }       from "wagmi";
+import { useAccount, useChainId } from "wagmi";
 import { api }              from "../../lib/api";
+import { useChain }         from "../../context/ChainContext";
 import Button               from "../ui/button/Button";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../ui/table";
 import Badge from "../ui/badge/Badge";
 
 export default function MyAssetsCard() {
   const { address } = useAccount();
+  const walletChainId = useChainId();
+  const appDefaultChainId = useChain();
+  const effectiveChainId = walletChainId ?? appDefaultChainId;
 
   const {
     data, fetchNextPage, hasNextPage, isFetchingNextPage,
   } = useInfiniteQuery({
     enabled: Boolean(address),
-    queryKey: ["my-assets", address],
+    queryKey: ["my-assets", address, effectiveChainId],
     initialPageParam: null as string | null,
     queryFn: async ({ pageParam }) => {
       const { data } = await api.get<{
@@ -27,7 +31,9 @@ export default function MyAssetsCard() {
           time:        string | null;
         }[];
         next: string | null;
-      }>(`/assets/${address}`, { params: { cursor: pageParam } });
+      }>(`/assets/${address}`, {
+        params: { cursor: pageParam, chain_id: effectiveChainId },
+      });
       return data;
     },
     getNextPageParam: last => last.next,

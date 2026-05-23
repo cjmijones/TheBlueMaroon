@@ -10,96 +10,95 @@ import {
 import { toast } from "sonner";
 
 import VAULT_FACTORY_ABI from "../abi/VaultFactory.json";
-import NFT_ABI           from "../abi/BluemaroonNFT.json";
-import { CHAINS }        from "../lib/addresses";
-import { api }           from "../lib/api";
-import { useChain }      from "../context/ChainContext";
+import NFT_ABI from "../abi/BluemaroonNFT.json";
+import { CHAINS } from "../lib/addresses";
+import { api } from "../lib/api";
+import { useChain } from "../context/ChainContext";
 
 export function useFractionalize() {
-  /* ─────────────────────── context ─────────────────────── */
   const { address: wallet, isConnected } = useAccount();
-  // ① wallet network reported by wagmi
-  const wagmiChainId   = useChainId();   // e.g. 11155111 for Sepolia
-
-  // ② optional chain selected in your UI
-  const ctxChainId     = useChain();     // falls back to 11155111 (Sepolia)
-
-  // ③ final chain we’ll use
-  const walletChainId        = wagmiChainId ?? ctxChainId ?? 11155111;
-  const { switchChainAsync }             = useSwitchChain();
-  const { writeContractAsync }           = useWriteContract();
-  const publicClient                     = usePublicClient();
+  const wagmiChainId = useChainId();
+  const ctxChainId = useChain();
+  const walletChainId = wagmiChainId ?? ctxChainId ?? 11155111;
+  const { switchChainAsync } = useSwitchChain();
+  const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
 
   return useMutation({
     mutationFn: async (p: {
       nft: `0x${string}`;
       tokenId: number;
-      shares:  number;
-      name?:   string;   // "BMN"
-      symbol?: string;   // "BMNS"
+      shares: number;
+      name?: string;
+      symbol?: string;
       roundPrice?: number;
     }) => {
-      /* 0. sanity / network ------------------------------------------------ */
       if (!isConnected) throw new Error("Connect wallet first");
+      if (!wallet) throw new Error("Wallet address not available");
       if (!publicClient) throw new Error("Public client not available");
-      const chainId = walletChainId ?? 11155111;                       // default Sepolia
-      const cfg     = CHAINS[chainId as keyof typeof CHAINS];
+
+      const chainId = walletChainId ?? 11155111;
+      const cfg = CHAINS[chainId as keyof typeof CHAINS];
       if (!cfg?.factory) {
-        const errChainId = chainId;
-        throw new Error(`Unsupported chain: ${errChainId} and CFG: ${cfg}`);
+        throw new Error(`Unsupported chain: ${chainId} and CFG: ${cfg}`);
       }
 
-      if (chainId !== walletChainId && switchChainAsync)
+      if (chainId !== walletChainId && switchChainAsync) {
         await switchChainAsync({ chainId });
+      }
 
-      /* 1. predict deterministic address ---------------------------------- */
       const predicted = await publicClient.readContract({
-        abi:      VAULT_FACTORY_ABI,
-        address:  cfg.factory,
+        abi: VAULT_FACTORY_ABI,
+        address: cfg.factory,
         functionName: "predictVault",
-        args:     [p.nft, BigInt(p.tokenId), wallet!],
+        args: [p.nft, BigInt(p.tokenId), wallet],
       }) as `0x${string}`;
 
-      // --------------------------------------------------------------
-      // 1.5 check if *code* exists at that address
-      //    (non-empty code  ≙  vault already deployed)
-      // --------------------------------------------------------------
       const bytecode = await publicClient.getBytecode({ address: predicted });
       if (bytecode && bytecode !== "0x") {
         throw new Error("Vault already exists for this NFT");
       }
 
-      /* 2. approve the vault to pull the NFT ------------------------------- */
       const approveHash = await writeContractAsync({
-        abi:      NFT_ABI,
-        address:  p.nft,
+        abi: NFT_ABI,
+        address: p.nft,
         functionName: "approve",
-        args:     [predicted, BigInt(p.tokenId)],
+        args: [predicted, BigInt(p.tokenId)],
       });
 
       await publicClient.waitForTransactionReceipt({ hash: approveHash });
-      toast.info("NFT approved – creating vault…");
+      await recordAppTransaction({
+        hash: approveHash,
+        wallet_address: wallet,
+        chain_id: chainId,
+        method: "approve_nft",
+        status: "mined",
+        payload_json: {
+          nft_contract: p.nft,
+          token_id: p.tokenId,
+          approved_spender: predicted,
+        },
+      });
+      toast.info("NFT approved - creating vault...");
 
-      /* 3. backend draft row ---------------------------------------------- */
       await api.post("/fractional/", {
         nft_contract: p.nft,
-        token_id:     p.tokenId,
-        shares:       p.shares,
-        chain_id:     chainId,
-        round_price:  p.roundPrice ?? null,
-        predicted_vault: predicted,          // helpful for later PATCH
+        token_id: p.tokenId,
+        shares: p.shares,
+        chain_id: chainId,
+        round_price: p.roundPrice ?? null,
+        predicted_vault: predicted,
       });
 
-      /* 4. createVault TX -------------------------------------------------- */
       const vaultHash = await writeContractAsync({
-        abi:         VAULT_FACTORY_ABI,
-        address:     cfg.factory,
-        functionName:"createVault",
+        abi: VAULT_FACTORY_ABI,
+        address: cfg.factory,
+        functionName: "createVault",
         args: [
           p.nft,
           BigInt(p.tokenId),
           BigInt(p.shares),
-          p.name   ?? "BMN",
+          p.name ?? "BMN",
           p.symbol ?? "BMNS",
         ],
       });
@@ -107,10 +106,23 @@ export function useFractionalize() {
       const receipt = await publicClient.waitForTransactionReceipt({ hash: vaultHash });
       if (receipt.status !== "success") throw new Error("Vault creation reverted");
 
-      /* 5. PATCH backend with real tx-data -------------------------------- */
       await api.patch(`/fractional/${predicted}`, {
         vault: predicted,
         tx_hash: vaultHash,
+      });
+      await recordAppTransaction({
+        hash: vaultHash,
+        wallet_address: wallet,
+        chain_id: chainId,
+        method: "create_fractional_vault",
+        status: "mined",
+        payload_json: {
+          nft_contract: p.nft,
+          token_id: p.tokenId,
+          shares: p.shares,
+          round_price: p.roundPrice ?? null,
+          vault: predicted,
+        },
       });
 
       toast.success("Vault created", {
@@ -134,7 +146,23 @@ export function useFractionalize() {
         ),
       });
 
-      return predicted;  // components can refresh balances
+      return predicted;
     },
   });
+}
+
+async function recordAppTransaction(payload: {
+  hash: `0x${string}`;
+  wallet_address?: `0x${string}`;
+  chain_id: number;
+  method: string;
+  status: "submitted" | "pending" | "mined" | "failed";
+  payload_json: Record<string, unknown>;
+}) {
+  try {
+    await api.post("/transactions/", payload);
+  } catch (err) {
+    console.warn("App transaction bookkeeping failed", err);
+    toast.warning("Transaction succeeded, but app history was not updated.");
+  }
 }
