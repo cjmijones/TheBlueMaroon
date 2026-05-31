@@ -53,12 +53,19 @@ def _jwks():
 
 def _decode_token(token: str):
     """Decode a Supabase Auth access token."""
+    decode_kwargs = {
+        "audience": settings.supabase_jwt_audience,
+    }
+    issuer = _supabase_issuer()
+    if issuer:
+        decode_kwargs["issuer"] = issuer
+
     if settings.supabase_jwt_secret:
         return jwt.decode(
             token,
             settings.supabase_jwt_secret,
             algorithms=["HS256"],
-            audience=settings.supabase_jwt_audience,
+            **decode_kwargs,
         )
 
     unverified = jwt.get_unverified_header(token)
@@ -71,15 +78,12 @@ def _decode_token(token: str):
             detail="Unable to find matching Supabase signing key",
         )
 
-    decode_kwargs = {
-        "algorithms": settings.algorithms,
-        "audience": settings.supabase_jwt_audience,
-    }
-    issuer = _supabase_issuer()
-    if issuer:
-        decode_kwargs["issuer"] = issuer
-
-    return jwt.decode(token, key, **decode_kwargs)
+    return jwt.decode(
+        token,
+        key,
+        algorithms=settings.supabase_jwt_algorithms,
+        **decode_kwargs,
+    )
 
 
 async def get_current_user(
@@ -94,7 +98,12 @@ async def get_current_user(
             detail="Invalid or expired token",
         ) from exc
 
-    sub = payload["sub"]
+    sub = payload.get("sub")
+    if not sub:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token subject",
+        )
     email = payload.get("email")
     user_metadata = payload.get("user_metadata") or {}
     name = (
@@ -141,38 +150,6 @@ async def get_current_user(
     )
     await db.commit()
     return (await db.execute(select(User).where(User.id == sub))).scalar_one()
-
-
-async def exchange_refresh_token(refresh_token: str) -> dict:
-    """
-    Legacy Auth0 helper. Supabase refresh is handled client-side by supabase-js.
-    """
-    if not settings.auth0_domain or not settings.auth0_client_id or not settings.auth0_client_secret:
-        raise HTTPException(
-            status_code=status.HTTP_410_GONE,
-            detail="Auth0 refresh tokens are no longer configured",
-        )
-
-    token_url = f"https://{settings.auth0_domain}/oauth/token"
-    data = {
-        "grant_type": "refresh_token",
-        "client_id": settings.auth0_client_id,
-        "client_secret": settings.auth0_client_secret,
-        "refresh_token": refresh_token,
-    }
-
-    async with httpx.AsyncClient(timeout=10) as client:
-        response = await client.post(token_url, data=data)
-
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired refresh token",
-        ) from e
-
-    return response.json()
 
 
 def get_redis() -> Redis:

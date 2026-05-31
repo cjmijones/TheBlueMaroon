@@ -9,8 +9,6 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.api.routes_health import router as health_router
 from app.api.routes_auth import router as auth_router
-from app.api.routes_token import router as token_router
-from app.api.routes_test_tokens import router as test_token_router
 from app.api.routes_username import router as user_router
 from app.api.routes_wallets import router as wallet_router
 from app.api.routes_kyc import router as kyc_router
@@ -73,7 +71,6 @@ app.add_middleware(
 # ────────────────────────────────
 api_router = APIRouter(prefix="/api")
 api_router.include_router(auth_router)
-api_router.include_router(token_router)
 api_router.include_router(health_router)
 api_router.include_router(user_router)
 api_router.include_router(wallet_router)
@@ -83,9 +80,6 @@ api_router.include_router(nfts_router)
 api_router.include_router(assets_router)
 api_router.include_router(portfolio_router)
 api_router.include_router(transactions_router)
-
-if settings.env_type == "dev":
-    api_router.include_router(test_token_router)
 
 app.include_router(api_router)
 

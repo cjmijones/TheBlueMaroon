@@ -17,6 +17,7 @@ export default function SupabaseSignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
@@ -28,16 +29,34 @@ export default function SupabaseSignInPage() {
   const submit = async (mode: "signin" | "signup") => {
     setPending(true);
     setError("");
+    setNotice("");
     try {
       if (mode === "signin") {
         await signInWithPassword(email, password);
+        navigate("/dashboard");
       } else {
-        await signUpWithPassword(email, password);
+        const result = await signUpWithPassword(email, password);
+        if (result.needsEmailConfirmation) {
+          setNotice("Check your email to confirm your account before signing in.");
+          return;
+        }
+        navigate("/dashboard");
       }
-      navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed");
     } finally {
+      setPending(false);
+    }
+  };
+
+  const continueWithGoogle = async () => {
+    setPending(true);
+    setError("");
+    setNotice("");
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Google sign-in failed");
       setPending(false);
     }
   };
@@ -104,6 +123,11 @@ export default function SupabaseSignInPage() {
                 {error}
               </Typography>
             )}
+            {notice && (
+              <Typography variant="body2" color="success.main">
+                {notice}
+              </Typography>
+            )}
 
             <Button type="submit" variant="contained" disabled={pending} fullWidth>
               {pending ? "Signing in..." : "Sign in"}
@@ -121,7 +145,7 @@ export default function SupabaseSignInPage() {
               type="button"
               variant="text"
               disabled={pending}
-              onClick={() => void signInWithGoogle()}
+              onClick={() => void continueWithGoogle()}
               fullWidth
             >
               Continue with Google

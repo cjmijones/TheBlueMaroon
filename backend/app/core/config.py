@@ -12,22 +12,8 @@ class Settings(BaseSettings):
     debug:   bool = False
     allowed_hosts: List[str] = ["*"]
 
-    # ──────────────────  Legacy Auth0  ───────────────────
+    # ──────────────────  Public URLs  ───────────────────
     public_base_url: str | None = "http://localhost:8000"
-
-    # ──────────────────  Legacy Auth0  ───────────────────
-    secret_key: str | None = None
-    auth0_domain: str | None = None
-    auth0_audience: str | None = None
-    auth0_client_id: str | None = None
-    auth0_client_secret: str | None = None
-    auth0_m2m_client_id: str | None = None
-    auth0_m2m_client_secret: str | None = None
-    auth0_sync_hmac: str | None = None
-    auth0_token_url: str = ""
-    algorithms: List[str] = ["RS256", "ES256"]
-    auth0_siwe_connection: str = "siwe"
-    auth0_allowed_chains: List[int] = [11155111, 1]
 
     # ──────────────────  Supabase Auth  ───────────────────
     supabase_url: str | None = None
@@ -35,6 +21,7 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str | None = None
     supabase_jwt_issuer: str | None = None
     supabase_jwt_audience: str = "authenticated"
+    supabase_jwt_algorithms: List[str] = ["RS256", "ES256"]
 
     # ──────────────────  Didit  ───────────────────
     didit_client_id: str

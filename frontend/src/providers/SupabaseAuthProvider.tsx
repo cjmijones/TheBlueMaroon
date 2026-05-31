@@ -10,6 +10,10 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 
+export type SignUpResult = {
+  needsEmailConfirmation: boolean;
+};
+
 type SupabaseAuthContextValue = {
   session: Session | null;
   user: User | null;
@@ -17,7 +21,7 @@ type SupabaseAuthContextValue = {
   isLoading: boolean;
   getAccessToken: () => Promise<string | undefined>;
   signInWithPassword: (email: string, password: string) => Promise<void>;
-  signUpWithPassword: (email: string, password: string) => Promise<void>;
+  signUpWithPassword: (email: string, password: string) => Promise<SignUpResult>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -59,14 +63,21 @@ export function SupabaseAuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const signUpWithPassword = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
     if (error) throw error;
+    return { needsEmailConfirmation: !data.session };
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     if (error) throw error;
   }, []);

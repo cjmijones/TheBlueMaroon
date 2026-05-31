@@ -23,7 +23,7 @@ Build a secure, cloud-native, scalable web application with:
 | **Frontend**   | [Vite](https://vitejs.dev/), [React](https://reactjs.org/), [TailwindCSS](https://tailwindcss.com/) | Fast modern frontend with utility-first CSS styling       |
 | **Backend**    | [FastAPI](https://fastapi.tiangolo.com/) | High-performance async API framework                     |
 | **Database**   | [PostgreSQL](https://www.postgresql.org/) via Supabase or Render | Relational database with strong scalability               |
-| **Auth**       | [Auth0](https://auth0.com/) | OAuth2, Social Logins, Secure User Management             |
+| **Auth**       | [Supabase Auth](https://supabase.com/docs/guides/auth) | Email/password, Google OAuth, JWT sessions                |
 | **Hosting**    | [Vercel](https://vercel.com/) (frontend), [Render](https://render.com/) (backend) | Scalable deployment platform with CI/CD support           |
 | **Security**   | [Cloudflare](https://www.cloudflare.com/)         | DNS management, HTTPS, WAF, DDoS protection               |
 | **Monitoring** | [Sentry](https://sentry.io/)                      | Error and performance monitoring for frontend and backend |
@@ -33,17 +33,23 @@ Build a secure, cloud-native, scalable web application with:
 
 ## 🔐 Security Features
 
-- 🔑 **OAuth 2.0 Authentication** with Auth0
+- 🔑 **Supabase Auth** for email/password, Google OAuth, and JWT-backed API sessions
 - 🛡️ **Rate Limiting** on API routes (e.g. `slowapi` or `express-rate-limit`)
 - ☁️ **Cloudflare WAF** for DDoS protection and HTTPS
 - 🔒 **Environment Variable Encryption** for secrets (via `.env` + Docker)
+
+## Current Auth Runtime
+
+Supabase Auth is the only active identity provider. The browser session is owned by `supabase-js`; refresh tokens stay in the browser client session storage, and FastAPI accepts only bearer access-token JWTs. The app routes Google OAuth and email confirmation callbacks through `/auth/callback`.
+
+For Google OAuth and email verification, configure Supabase Authentication URL settings with the app Site URL and exact callback redirect URLs, and configure Google Cloud Console with the Supabase provider callback URL (`https://<project-ref>.supabase.co/auth/v1/callback`). See `USER_README.md` for the environment checklist.
 
 ---
 
 ## 🧪 Basic Features for MVP
 
 - Hello world homepage with React + Tailwind
-- Login / Logout flow using Auth0
+- Login / logout flow using Supabase Auth
 - Basic CRUD API for `Posts` (GET, POST, PUT, DELETE)
 - PostgreSQL schema with example `users` and `posts` tables
 - Deployed backend and frontend via Render and Vercel
@@ -75,7 +81,7 @@ Project-Directory
 │   │   ├── api/                     # All route definitions
 │   │   │   ├── routes_auth.py
 │   │   │   └── routes_posts.py
-│   │   ├── core/                    # App configuration & Auth0 integration
+│   │   ├── core/                    # App configuration
 │   │   │   ├── config.py
 │   │   │   └── auth.py
 │   │   ├── models/                  # Pydantic models & SQLAlchemy schemas
@@ -95,9 +101,9 @@ Project-Directory
 │   │   ├── pages/
 │   │   ├── App.tsx
 │   │   ├── main.tsx
-│   │   └── auth/                    # Auth0 wrapper
-│   │       ├── AuthProvider.tsx
-│   │       └── useAuth.ts
+│   │   └── providers/               # Supabase auth and app providers
+│   │       ├── SupabaseAuthProvider.tsx
+│   │       └── ApiProvider.tsx
 │   ├── Dockerfile
 │   ├── vite.config.ts
 │   └── package.json
@@ -113,9 +119,8 @@ Project-Directory
 |----------------|----------------------------------|------|
 | Vercel         | Frontend hosting + CI/CD         | [vercel.com](https://vercel.com/) |
 | Render         | Backend hosting + DB             | [render.com](https://render.com/) |
-| Auth0          | Authentication (OAuth2)          | [auth0.com](https://auth0.com/) |
+| Supabase       | Auth and PostgreSQL hosting      | [supabase.com](https://supabase.com/) |
 | Cloudflare     | DNS + WAF + DDoS Protection      | [cloudflare.com](https://cloudflare.com/) |
-| Supabase / DB  | PostgreSQL hosting (optional)    | [supabase.io](https://supabase.io/) |
 | Sentry         | Monitoring and error logging     | [sentry.io](https://sentry.io/) |
 | GitHub         | Version control + deployment     | [github.com](https://github.com/) |
 
@@ -127,10 +132,10 @@ Project-Directory
 - [x] Set up GitHub repo and push initial code
 - [x] Create accounts for necessary services
 - [x] Deploy and test basic hello world app with CRUD
-- [x] Add login flow with Auth0
-- [x] Add log flow with Auth0
+- [x] Add login flow with Supabase Auth
+- [x] Add logout flow with Supabase Auth
 - [x] Scaffold React pages: Landing, Explore, Asset Detail, Portfolio, Holding Detail  
-- [x] Implement Auth0 + SIWE wrapper  
+- [x] Implement Supabase-protected SIWE wallet linking  
 - [x] Add mock Liquidity & Exit components (Sell / Withdraw)  
 - [ ] **Wire dummy hooks to FastAPI + sub-graph endpoints**  
 - [ ] Replace Sell & Withdraw modals with wagmi `useContractWrite` flows  
@@ -150,12 +155,14 @@ Project-Directory
 
 This document tracks the structure, contents, and development progress of each key file in the project. For every file, we document its purpose, key functions and classes, import dependencies, external services, known bugs, and future steps.
 
+> Active auth architecture: The app now uses Supabase Auth. Any older Auth0 notes below are historical snapshots from early project setup and should not be used for new work.
+
 ## Project TODO (Backend + Frontend)
 
 | Priority | Area      | Task                                                                 | Status           |
 |----------|-----------|----------------------------------------------------------------------|------------------|
 | 🔥 High   | Backend   | Add unit tests for `verify_jwt` and route auth flows                 | ✅ Complete |
-| 🔥 High   | Frontend  | Add fallback for missing Auth0 env variables in `main.tsx`           | ✅ Complete |
+| 🔥 High   | Frontend  | Add Supabase environment/provider wiring in the app shell            | ✅ Complete |
 | 🔄 Medium | Backend   | Integrate Alembic with `asyncpg` and test SSL handling               | ✅ Complete |
 | 🔄 Medium | Frontend  | Improve loading UX in `ProtectedRoute` and `Dashboard`               | ✅ Complete |
 | 🔄 Medium | Backend   | Replace `Base.metadata.create_all()` with Alembic migrations         | ✅ Complete |
@@ -163,7 +170,7 @@ This document tracks the structure, contents, and development progress of each k
 | 🔄 Medium | Backend   | Add error logging for failed JWT decode attempts                     | ✅ Complete |
 | 🔄 Medium | Frontend  | Expand dashboard with additional user or app-specific data           | ✅ Complete |
 | 🧪 Low    | Frontend  | Add support for multiple login providers in `Login.tsx`              | ✅ Complete |
-| 🧪 Low    | Backend   | Add a `/status` route to include DB and Auth0 connectivity checks    | ✅ Complete |
+| 🧪 Low    | Backend   | Add a `/status` route to include DB and auth connectivity checks     | ✅ Complete |
 | 🔥 High | Backend | Implement `/portfolio` endpoint returning wallet-scoped positions | ⬜ Not started |
 | 🔥 High | Frontend | Swap `usePositions`, `usePosition` to live API | ⬜ Not started |
 | 🔥 High | Smart-Contracts | Deploy & test `sell()` and `withdraw()` methods | ⬜ Not started |
@@ -172,7 +179,7 @@ This document tracks the structure, contents, and development progress of each k
 | 🔄 Medium | Frontend | Replace `useOrderBook`, `useOpenOrders` with live data | ⬜ Not started |
 | 🔄 Medium | Backend | Alembic migrations (replace `create_all`) | ⬜ Not started |
 | ✅ Low | Frontend | Dark-mode landing & Explore polish | ✅ Complete |
-| 🧪 Low | Backend | `/status` health route (DB + Auth0 + chain) | ⬜ Not started |
+| 🧪 Low | Backend | `/status` health route (DB + Supabase JWKS + chain) | ⬜ Not started |
 | 🧪 Low | Docs | Auto-generate FastAPI schema (`/docs`) | ⬜ Not started |
 
 
@@ -309,10 +316,10 @@ Defines a simple health check endpoint to confirm that the API server is respons
 **Major Updates**  
 - `2025-05-05`: Health check route defined and documented
 
-### `backend/app/core/auth.py`
+### Historical: `backend/app/core/auth.py`
 
 **Purpose**  
-Implements JWT-based authentication logic using Auth0. It verifies access tokens passed via HTTP headers, checks their signature using Auth0's JWKS, and decodes valid tokens to return the user payload. This is the core security logic backing any protected endpoints in the API.
+Historical note from the early Auth0 prototype. The active backend auth path now lives in `backend/app/auth/deps.py`, validates Supabase JWTs, and derives app authorization from local database state.
 
 **Key Imports**  
 - Internal:  
@@ -321,26 +328,24 @@ Implements JWT-based authentication logic using Auth0. It verifies access tokens
   - `from fastapi import Depends, HTTPException, status, Request` — FastAPI dependency injection and HTTP utilities  
   - `from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials` — handles bearer token parsing  
   - `from jose import jwt, JWTError` — for decoding and verifying JWTs  
-  - `import requests` — used to fetch Auth0's public keys (JWKS)  
-  - `import os`, `from dotenv import load_dotenv` — loads environment variables for Auth0 configuration
+  - Historical: `import requests` was used to fetch Auth0 public keys (JWKS)  
+  - Historical: `import os`, `from dotenv import load_dotenv` loaded environment variables for the prototype identity provider
 
 **Functions & Classes**
 
 - **Internal**
-  - `verify_jwt(token: str = Depends(get_token_auth_header)) -> dict` — validates and decodes the JWT using Auth0’s public key  
+  - Historical: `verify_jwt(token: str = Depends(get_token_auth_header)) -> dict` validated and decoded JWTs for the prototype identity provider  
   - `get_token_auth_header(credentials: HTTPAuthorizationCredentials)` — extracts the token from the `Authorization` header and ensures it's a bearer token
 
 - **External**
-  - `load_dotenv()` — loads secrets like `AUTH0_DOMAIN` and `AUTH0_AUDIENCE` from a `.env` file  
+  - Historical: `load_dotenv()` loaded prototype identity-provider values from a `.env` file  
   - `HTTPBearer()` — defines the expected auth scheme  
-  - `requests.get(JWKS_URL)` — fetches Auth0's public key set (JWKS) to validate tokens  
+  - Historical: `requests.get(JWKS_URL)` fetched a public key set to validate tokens  
   - `jwt.get_unverified_header()` and `jwt.decode()` — extract metadata from and validate the JWT  
   - `HTTPException(...)` — used to raise meaningful errors during any part of the validation process  
 
 **Dependencies & Services**  
-- Requires a `.env` file with `AUTH0_DOMAIN` and `AUTH0_AUDIENCE`  
-- Connects to Auth0’s JWKS endpoint at `https://{AUTH0_DOMAIN}/.well-known/jwks.json`  
-- Auth0-issued JWTs must follow RS256 algorithm with `kid`-based key discovery
+- Historical snapshot only. The active backend uses Supabase JWT settings and should not be configured from the prototype identity-provider values documented here.
 
 **Known Issues / Bugs**  
 - [ ] JWKS is fetched on import — may not auto-refresh if key rotation occurs  
@@ -350,10 +355,10 @@ Implements JWT-based authentication logic using Auth0. It verifies access tokens
 **Next Steps**  
 - Add in-memory caching or periodic refresh for JWKS to avoid re-fetching  
 - Expand to support scopes or roles from JWT claims  
-- Write unit tests using mocked Auth0 responses
+- Historical next step is obsolete. Add tests around the active Supabase JWT validation path instead.
 
 **Major Updates**  
-- `2025-05-05`: Auth0 integration implemented and file documented
+- `2025-05-05`: Prototype identity integration implemented and file documented
 
 ### `backend/app/core/config.py`
 
@@ -383,7 +388,7 @@ Provides centralized application configuration using environment variables and a
 
 **Known Issues / Bugs**  
 - [ ] No validation for required env variables (e.g., missing `ENV_TYPE` still defaults silently)  
-- [ ] Not yet extended to include secrets or service config (e.g., DB_URL, Auth0 keys)
+- [ ] Not yet fully documented for every required service config value.
 
 **Next Steps**  
 - Add support for database, cache, or external API config variables  
@@ -480,7 +485,7 @@ Defines the asynchronous database engine and session factory used throughout the
 ### `backend/app/models/user.py`
 
 **Purpose**  
-Defines the `User` model used to represent authenticated users in the database. This model is mapped to the `users` table via SQLAlchemy and stores basic identity information, including Auth0 ID, email, name, and login metadata.
+Defines the `User` model used to represent authenticated users in the database. This model is mapped to the `users` table via SQLAlchemy and stores basic identity information, including the Supabase user id, email, name, picture, and login metadata.
 
 **Key Imports**  
 - Internal:  
@@ -493,7 +498,7 @@ Defines the `User` model used to represent authenticated users in the database. 
 **Functions & Classes**
 
 - **Internal**
-  - `User(Base)` — a SQLAlchemy ORM model representing the `users` table. Includes fields like `id`, `email`, and `last_login`. The `id` corresponds to the Auth0 user’s `sub` claim.
+  - `User(Base)` — a SQLAlchemy ORM model representing the `users` table. Includes fields like `id`, `email`, and `last_login`. The `id` corresponds to the Supabase user `sub` claim.
 
 - **External**
   - `Base = declarative_base()` — establishes a base class to register the ORM schema  
@@ -502,7 +507,7 @@ Defines the `User` model used to represent authenticated users in the database. 
 **Dependencies & Services**  
 - Used by the database initialization logic in `init_db.py`  
 - Compatible with FastAPI + SQLAlchemy stack for user persistence  
-- Assumes Auth0 provides `id`, `email`, `name`, and optionally `picture` during authentication
+- Assumes Supabase provides `sub`, `email`, and optional profile metadata during authentication
 
 **Known Issues / Bugs**  
 - [ ] `default=datetime.now()` may evaluate at import time instead of per-record insertion (should use `default=datetime.utcnow` or `default_factory`)  
@@ -516,7 +521,7 @@ Defines the `User` model used to represent authenticated users in the database. 
 - Introduce Pydantic schema for input/output validation in API
 
 **Major Updates**  
-- `2025-05-05`: Initial user model defined for Auth0 identity integration
+- `2025-05-05`: Initial user model defined for the first identity integration
 
 ### `backend/alembic/env.py`
 
@@ -578,7 +583,7 @@ Configures Alembic to manage database schema migrations. This script sets up the
 | **Version**             | `0.0.0`                                                                        |
 | **Framework**           | [Vite](https://vitejs.dev/) + [React 19](https://react.dev/) + TypeScript      |
 | **CSS / UI Frameworks** | Tailwind (via base project), Material UI 7.x (`@mui/material`), Emotion        |
-| **Authentication**      | Auth0 via `@auth0/auth0-react`                                                 |
+| **Authentication**      | Supabase Auth via `@supabase/supabase-js`                                      |
 | **Routing**             | `react-router-dom` v7.5.1                                                      |
 | **Tooling**             | [ESLint](https://eslint.org/), [Toolpad](https://mui.com/toolpad/), TypeScript |
 | **Vite Plugins**        | `@vitejs/plugin-react-swc` for fast JSX transforms                             |
@@ -590,10 +595,10 @@ Configures Alembic to manage database schema migrations. This script sets up the
 
 ---
 
-### `frontend/src/main.tsx`
+### Historical Note: `frontend/src/main.tsx`
 
 **Purpose**  
-Bootstraps the React application and wraps the root component (`App`) in Auth0's authentication context provider. This file is responsible for setting up the initial render tree, including enabling React strict mode and injecting environment-specific Auth0 credentials into the app.
+Bootstraps the React application. The active app provider stack now wraps routes with `SupabaseAuthProvider`, API/React Query providers, and wallet/chain providers rather than an Auth0 SDK provider.
 
 **Key Imports**  
 - Internal:  
@@ -601,7 +606,7 @@ Bootstraps the React application and wraps the root component (`App`) in Auth0's
 - External:  
   - `import { StrictMode } from 'react'` — enables development warnings and side-effect checks  
   - `import { createRoot } from 'react-dom/client'` — initializes the root render tree using the new concurrent-compatible API  
-  - `import { Auth0Provider } from '@auth0/auth0-react'` — provides React context for authentication, token access, and protected routes  
+  - Historical: this file previously imported the Auth0 React SDK. The active provider is `SupabaseAuthProvider`.
   - `import.meta.env.*` — pulls project-specific environment variables defined in `.env` or `.env.local`
 
 **Functions & Classes**
@@ -609,32 +614,29 @@ Bootstraps the React application and wraps the root component (`App`) in Auth0's
 - **External**
   - `createRoot(...).render(...)` — mounts the React app to the DOM element with ID `root`  
   - `<StrictMode>` — React feature for development-time checks  
-  - `<Auth0Provider>` — injects domain, clientId, audience, and redirect URI into the authentication context for use throughout the app  
-  - `import.meta.env.VITE_AUTH0_DOMAIN` etc. — securely loads sensitive Auth0 config from environment variables during build/runtime
+  - Historical: the earlier `<Auth0Provider>` wrapper is replaced by the Supabase provider stack.
+  - Active frontend env values use `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`.
 
 **Dependencies & Services**  
-- Relies on `.env` file to define the following environment variables:
-  - `VITE_AUTH0_DOMAIN`  
-  - `VITE_AUTH0_CLIENT_ID`  
-  - `VITE_AUTH0_AUDIENCE`  
-- Uses Auth0 for authentication across the app via the `@auth0/auth0-react` SDK
+- Active auth uses Supabase client configuration from frontend `VITE_SUPABASE_*` values.
+- Historical prototype Auth0 env values should not be added for new work.
 
 **Known Issues / Bugs**  
 - [ ] No fallback or error handling if required `import.meta.env.*` variables are missing  
 - [ ] `!` non-null assertions assume variables are defined — could cause runtime crash if omitted
 
 **Next Steps**  
-- Add runtime checks to warn if Auth0 environment variables are undefined  
-- Consider moving the Auth0Provider config to a dedicated wrapper component (e.g., `AuthProvider.tsx`) for clarity and reuse  
-- Integrate Auth0's token renewal and error boundary handling
+- Add runtime checks around required Supabase environment values.
+- Keep auth provider logic in `SupabaseAuthProvider`.
+- Add error surfaces around Supabase token refresh or callback failures where user-facing flows need them.
 
 **Major Updates**  
-- `2025-05-05`: Initial app mount logic and Auth0 integration implemented
+- `2025-05-05`: Initial app mount logic and prototype identity integration implemented
 
-### `frontend/src/App.tsx`
+### Historical Note: `frontend/src/App.tsx`
 
 **Purpose**  
-Defines the core routing structure of the frontend using React Router. It sets up both public and protected routes, wrapping protected pages in an Auth0-aware guard component. The app currently consists of a public login page (`/`) and a protected dashboard page (`/dashboard`).
+Defines the core routing structure of the frontend using React Router. The active route graph includes a public Supabase login page, a public `/auth/callback` route for OAuth/email confirmation redirects, and protected application pages wrapped by Supabase auth state.
 
 **Key Imports**  
 - Internal:  
@@ -642,13 +644,13 @@ Defines the core routing structure of the frontend using React Router. It sets u
   - `import Dashboard from './components/Dashboard'` — main user view shown after authentication  
 - External:  
   - `import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'` — provides client-side routing and route protection  
-  - `import { useAuth0 } from '@auth0/auth0-react'` — provides access to the user’s authentication state, loading status, and login functions
+  - Active auth state is provided by Supabase auth context and `ProtectedRoute`.
 
 **Functions & Classes**
 
 - **Internal**
   - `ProtectedRoute({ children })` — a wrapper component that:
-    - Displays a loading message while Auth0 checks authentication  
+    - Displays a loading message while Supabase auth state is being resolved  
     - Redirects to `/` if the user is not authenticated  
     - Renders the protected child component otherwise  
   - `App()` — the main component that:
@@ -658,14 +660,14 @@ Defines the core routing structure of the frontend using React Router. It sets u
       - `/dashboard` → protected dashboard, only accessible via `ProtectedRoute`
 
 - **External**
-  - `useAuth0()` — used to check `isAuthenticated` and `isLoading` in real time  
+  - Active implementation uses Supabase auth state to check `isAuthenticated` and `isLoading` in real time  
   - `<Navigate to="/" replace />` — redirects unauthenticated users to the home page  
   - `<Routes>` and `<Route>` — define how different components are rendered based on the URL path
 
 **Dependencies & Services**  
 - Uses `react-router-dom` for navigation and route protection  
-- Depends on `@auth0/auth0-react` to manage session state  
-- Assumes Auth0Provider is wrapping this app (as configured in `main.tsx`)
+- Depends on `SupabaseAuthProvider` to manage session state.
+- Assumes the provider stack is configured in `main.tsx`.
 
 **Known Issues / Bugs**  
 - [ ] No error boundary for failed authentication or expired sessions  
@@ -689,7 +691,7 @@ Renders the authenticated user’s dashboard, displaying basic profile informati
 - Internal:  
   - None  
 - External:  
-  - `useAuth0` from `@auth0/auth0-react` — provides access to the current authenticated user object and logout method  
+  - Historical: this component originally used an Auth0 React hook for user/logout state.
   - `Box`, `Typography`, `Avatar`, `Button` from `@mui/material` — Material UI components for layout and styling
 
 **Functions & Classes**
@@ -698,12 +700,12 @@ Renders the authenticated user’s dashboard, displaying basic profile informati
   - `Dashboard()` — displays the authenticated user’s avatar, name, email, and a logout button. Leverages Material UI’s layout system for visual structure.
 
 - **External**
-  - `useAuth0()` — accesses `user` and `logout()`  
+  - Active dashboard/profile surfaces use Supabase auth state and backend `/api/me`.
   - `logout({ returnTo: window.location.origin })` — logs out the user and redirects to the app’s root  
   - `<Avatar>`, `<Typography>`, `<Button>` — styled components from MUI used for visual presentation and interaction
 
 **Dependencies & Services**  
-- Relies on Auth0 React SDK (`@auth0/auth0-react`) for user authentication and logout  
+- Historical prototype relied on the Auth0 React SDK. Active auth uses Supabase.
 - Styled using Material UI (`@mui/material`)  
 - Expects to be accessed via a protected route (`/dashboard`) wrapped in `ProtectedRoute`
 
@@ -720,19 +722,18 @@ Renders the authenticated user’s dashboard, displaying basic profile informati
 **Major Updates**  
 - `2025-05-05`: Initial user dashboard component implemented and styled with MUI
 
-### `frontend/src/components/Login.tsx`
+### Historical Note: `frontend/src/components/Login.tsx`
 
 **Purpose**  
-Renders the OAuth login page using the `@toolpad/core` UI components for authentication, wrapped in a custom MUI dark theme. It leverages Auth0 for login, and redirects authenticated users to the dashboard.
+Renders the Supabase login/signup page, including email/password auth, Google OAuth handoff, email confirmation messaging, and redirects for authenticated users.
 
 **Key Imports**  
 - Internal:  
   - `import darkTheme from '../css-styles/darkTheme'` — applies a custom Material UI theme to style the login page  
 - External:  
   - `@toolpad/core/AppProvider` — provides theming and layout context for Toolpad components  
-  - `@toolpad/core/SignInPage`, `AuthProvider`, `AuthResponse` — used to render the login form and handle provider-based auth  
-  - `@mui/material/Box` — used for layout and styling  
-  - `useAuth0` from `@auth0/auth0-react` — triggers login and checks authentication state  
+  - MUI layout and form components — used to render the current login/signup form  
+  - Supabase auth context — triggers email/password or Google auth and checks authentication state  
   - `useNavigate` from `react-router-dom` — used for client-side redirects  
   - `useEffect` from `react` — monitors `isAuthenticated` to redirect on login
 
@@ -741,18 +742,18 @@ Renders the OAuth login page using the `@toolpad/core` UI components for authent
 - **Internal**
   - `OAuthSignInPage()` — the main exported component that:
     - Presents a centered login form styled with MUI and Toolpad  
-    - Calls `loginWithRedirect()` to begin the Auth0 login flow  
+    - Calls Supabase auth methods for email/password or Google sign-in  
     - Uses `useEffect()` to redirect users to `/dashboard` after successful login
 
 - **External**
-  - `signIn()` — async handler compatible with Toolpad’s `SignInPage`, delegates to Auth0’s `loginWithRedirect()`  
+  - Supabase handlers manage sign-in, sign-up, and Google OAuth redirects.
   - `<AppProvider theme={darkTheme}>` — applies the custom dark theme  
-  - `<SignInPage signIn={signIn} providers={...} />` — renders the Toolpad-provided OAuth form with a labeled Auth0 button  
+  - The current form renders explicit email/password and Google controls.
   - `useNavigate()` — redirects the user after login  
-  - `useAuth0()` — checks `isAuthenticated` and initiates the login redirect
+  - Supabase auth state checks `isAuthenticated` and initiates redirects.
 
 **Dependencies & Services**  
-- Uses Auth0 for authentication via `@auth0/auth0-react`  
+- Uses Supabase for authentication via `@supabase/supabase-js`  
 - Renders a themed login page using `@toolpad/core` components  
 - Redirects authenticated users to `/dashboard`  
 - Depends on custom theme styling from `../css-styles/darkTheme`
@@ -768,5 +769,5 @@ Renders the OAuth login page using the `@toolpad/core` UI components for authent
 - Add branding and accessibility features to match the broader UI design
 
 **Major Updates**  
-- `2025-05-05`: OAuth login screen implemented using Toolpad and Auth0
+- `2025-05-05`: OAuth login screen implemented for the prototype identity provider
 

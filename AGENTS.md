@@ -18,6 +18,12 @@
 - `backend/alembic/versions/`: database migrations.
 - `contracts/`: Solidity contracts; do not hand-edit generated artifacts as a substitute for compiling.
 
+## Local Planning Reference
+- If `AGENT_TODO.md` exists at the repo root, read it before planning new work. It is intentionally gitignored and acts as the local, living task board for completed workstreams, active priorities, and next tasks.
+- Use `AGENT_ROLES.md` when assigning or simulating role-based work. Keep role use lightweight: prefer a specific task contract over adding new permanent agent files.
+- Update `AGENT_TODO.md` as work is completed or priorities change, but do not rely on it as a substitute for reading the relevant source files.
+- Follow the token-aware workflow tiers in `AGENT_ROLES.md`. Do not spawn subagents for Tier 0 work, use smaller/low-reasoning helpers for narrow Tier 1 work, and reserve full staged review for auth, wallet, KYC, contracts, migrations, deploys, or broad refactors.
+
 ## Common Commands
 - Root contract deps: `npm install`
 - Compile contracts and refresh ABIs: `npx hardhat compile`
@@ -30,6 +36,8 @@
 - Backend dev server: `cd backend; .\venv\Scripts\uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
 - Backend migrations: `cd backend; .\venv\Scripts\alembic upgrade head`
 - Docker stack: `cd backend/ops; docker compose up --build`
+- Quiet backend verification: `.\backend\scripts\verify_quiet.ps1`
+- Quiet frontend verification: `.\frontend\scripts\verify_quiet.ps1`
 
 ## Environment And Secrets
 - `.env` files exist locally and may contain real credentials. Never print, copy, commit, or summarize secret values.
@@ -47,8 +55,9 @@
 - Use ASCII in new files unless the file already intentionally uses non-ASCII.
 
 ## Verification Checklist
-- Frontend-only changes: run `cd frontend; npm run build` and `cd frontend; npm run lint` when practical.
-- Backend-only changes: run focused tests if present; at minimum import/start FastAPI or run affected route checks when env allows.
+- Prefer the smallest meaningful verification for the risk tier. Use quiet wrappers when successful output would be noisy.
+- Frontend-only changes: run `cd frontend; npm run build` and `cd frontend; npm run lint` when practical, or `.\frontend\scripts\verify_quiet.ps1` for summary output.
+- Backend-only changes: run focused tests if present; at minimum import/start FastAPI or run affected route checks when env allows. Use `.\backend\scripts\verify_quiet.ps1` for quiet pytest output.
 - DB changes: run `cd backend; .\venv\Scripts\alembic upgrade head` against the intended local DB.
 - Contract changes: run `npx hardhat compile` and `npx hardhat test`.
 - Full-stack changes: verify the backend on port 8000 and the Vite frontend on port 5173, especially `/api` calls.

@@ -93,6 +93,25 @@ Use `SUPABASE_JWKS_URL` for the recommended Supabase signing-keys flow. `SUPABAS
 For Docker compose, `backend/ops/docker-compose.yml` uses `env_file: ../.env`, which resolves to `backend/.env` when compose is run from `backend/ops`.
 The compose app service overrides `ENV_TYPE=docker` and clears `NEON_DATABASE_URL` so the running app uses the same local Postgres service that the `migrate` container upgrades. Without that override, `ENV_TYPE=dev` makes `backend/app/core/config.py` prefer Neon when `NEON_DATABASE_URL` is present.
 
+## Supabase Auth Dashboard Checklist
+
+The active app code sends Supabase email and Google OAuth redirects to:
+
+```text
+<app-origin>/auth/callback
+```
+
+Configure Supabase Auth before testing those flows:
+
+- In Supabase Authentication URL Configuration, set Site URL to the active app origin for the environment.
+- Add exact redirect URLs for each environment, including `http://localhost:5173/auth/callback` for split local development and the production equivalent.
+- Enable Confirm Email if email verification is required before normal sign-in. With Confirm Email enabled, password signup can return no browser session; the login page now shows a check-email state for that case.
+- Enable the Google provider in Supabase and add its client ID and client secret.
+- In Google Cloud Console, register the Supabase provider callback URL, which is shaped like `https://<project-ref>.supabase.co/auth/v1/callback`; this is different from the app's `/auth/callback` URL.
+- If email templates customize confirmation links and use `redirectTo`, make sure templates honor Supabase's redirect target rather than hard-coding the Site URL.
+
+Reference docs: [Supabase redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls) and [Supabase Google login](https://supabase.com/docs/guides/auth/social-login/auth-google).
+
 ## Install Dependencies
 
 From the repo root:
@@ -312,11 +331,11 @@ Core backend modules:
 | --- | --- |
 | `backend/app/core/config.py` | Pydantic settings and environment variable mapping. |
 | `backend/app/db/session.py` | Async SQLAlchemy engine/session setup. Uses Neon SSL when URL contains `neon.tech`. |
-| `backend/app/auth/deps.py` | Supabase JWT validation, user upsert, legacy refresh helper, Redis dependency. |
+| `backend/app/auth/deps.py` | Supabase JWT validation, current-user upsert, and Redis dependency. |
 | `backend/app/core/chains.py` | RPC URLs, token addresses, and contract addresses for chain reads. |
 | `backend/app/core/addresses.py` | Contract/Alchemy lookup used by asset and fractional routes. |
 | `backend/app/models` | SQLAlchemy models for users, wallets, listings, orders, verification, transactions, etc. |
-| `backend/app/services` | Legacy Auth0 management, Alchemy, chain reads, Didit KYC helpers. |
+| `backend/app/services` | Alchemy, chain reads, Didit KYC helpers, and other external service adapters. |
 
 ### Backend API Routes
 
@@ -325,10 +344,8 @@ All paths below are prefixed with `/api`.
 | Route | Backend file | Purpose |
 | --- | --- | --- |
 | `GET /health` | `routes_health.py` | Basic health check. |
-| `GET /me` | `routes_auth.py` | Supabase-protected current user profile. Upserts user through `get_current_user`. |
+| `GET /me` | `routes_auth.py` | Supabase-authenticated app profile with roles, wallet state, KYC state, and derived capabilities. |
 | `POST /me/update-username` | `routes_username.py` | Updates current user's `name` if not taken. |
-| `POST /token/refresh` | `routes_token.py` | Legacy Auth0 refresh route; Supabase refresh is handled by `supabase-js`. |
-| `POST /test-tokens/refresh-and-validate` | `routes_test_tokens.py` | Dev-only token refresh/validation helper. |
 | `POST /wallets/nonce` | `routes_wallets.py` | Issues Redis-backed SIWE nonce. |
 | `GET /wallets/` | `routes_wallets.py` | Lists wallets for authenticated user. |
 | `POST /wallets/` | `routes_wallets.py` | Verifies SIWE signature and links wallet. |
@@ -347,6 +364,7 @@ All paths below are prefixed with `/api`.
 
 Authentication pattern:
 
+- Supabase is the only active identity provider. The frontend keeps Supabase refresh tokens inside `supabase-js`; the backend accepts only bearer access tokens and validates them as Supabase JWTs. There is no backend refresh-token exchange endpoint.
 - Most business routes depend on `get_current_user`.
 - `get_current_user` validates a Supabase JWT, upserts the user in Postgres, and updates `last_login`.
 - SIWE wallet linking is not standalone auth. It is a Supabase-authenticated user proving control of a wallet by signing a nonce.
@@ -389,6 +407,7 @@ Important frontend modules:
 | Route | Page/component | Current behavior |
 | --- | --- | --- |
 | `/` | `components/Login.tsx` | Supabase login page. Redirects authenticated users to `/dashboard`. |
+| `/auth/callback` | `components/auth/AuthCallback.tsx` | Supabase OAuth/email confirmation callback surface. Finishes session redirects or shows auth errors. |
 | `/dashboard` | `pages/Home` | Authenticated landing/dashboard home. Uses mock recent listings. |
 | `/explore` | `pages/Explore` | Marketplace browse page. Uses mock listing hook. |
 | `/asset/:id` | `pages/AssetDetail` | Asset detail page. Uses mock asset hook. |
@@ -493,11 +512,10 @@ The parts that most need cleanup before future development:
    - For production, prefer object storage/IPFS over container-local files.
 
 8. Review small backend bugs.
-   - `routes_token.py` uses `HTTPException` without importing it.
-   - `routes_kyc.py` should be tested carefully; the webhook updates verification fields and appears to assign a session id into a user id field.
+   - Keep expanding KYC tests beyond the current Didit state-mapping coverage, especially around webhook signature failures and missing verification rows.
 
 9. Reduce sensitive logging.
-   - `get_current_user` prints JWT payloads. That is useful during development but should be removed or sanitized.
+   - Continue reviewing auth, SIWE, KYC, and transaction logs for tokens, signatures, full wallet addresses, and third-party payloads.
 
 10. Expand tests.
    - Current contract tests are for the template `Lock` contract, not `BluemaroonNFT`, `VaultFactory`, or `FractionalVault`.
