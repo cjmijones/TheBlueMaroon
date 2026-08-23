@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview --port 5173"
+    "preview": "vite preview --port 5173",
+    "smoke:start": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/start_smoke_server.ps1",
+    "smoke:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/stop_smoke_server.ps1",
+    "smoke:routes": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/smoke_routes.ps1",
+    "verify:truth-pass": "node ./scripts/verify_truth_pass.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

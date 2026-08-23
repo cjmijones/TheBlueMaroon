@@ -151,6 +151,7 @@ async def my_portfolio(
             "image_url": asset.image_url,
             "nft_contract": asset.nft_contract,
             "token_id": asset.token_id,
+            "owner_wallet_address": asset.owner_wallet_address,
             "chain_id": asset.chain_id,
             "vault": None,
             "shares": None,

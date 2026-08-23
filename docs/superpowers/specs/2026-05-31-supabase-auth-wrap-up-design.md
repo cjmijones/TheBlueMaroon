@@ -97,7 +97,7 @@ Use derived capabilities for changing state:
 - `has_linked_wallet`: derived from the `wallets` table.
 - `is_kyc_verified`: derived from `user_verification.id_verified_at` and `aml_status == "clear"`.
 - `can_transact`: true when the user is authenticated, has a linked wallet, and meets the required verification state for the transaction type.
-- `can_create_asset`: true when the user has the durable `creator` role and a linked wallet.
+- `can_create_asset`: true when the user has the durable `creator` role, a linked wallet, and clear KYC.
 - `can_fractionalize`: true when the user has the durable `creator` role, a linked wallet, and any verification state required by the product rules.
 
 Existing state-like roles such as `member_wallet` should be treated as legacy or transitional. The implementation can keep reading them for compatibility but should not add new state roles.

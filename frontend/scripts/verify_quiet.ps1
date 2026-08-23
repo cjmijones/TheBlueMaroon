@@ -51,6 +51,20 @@ function Invoke-Logged {
     exit $ExitCode
 }
 
+function Get-NpmCommand {
+    $ProgramFilesNpm = Join-Path $env:ProgramFiles "nodejs\npm.cmd"
+    if (Test-Path $ProgramFilesNpm) {
+        return $ProgramFilesNpm
+    }
+
+    $Command = Get-Command npm.cmd -ErrorAction SilentlyContinue
+    if ($Command) {
+        return $Command.Source
+    }
+
+    return "npm"
+}
+
 function Invoke-NpmLogged {
     param(
         [string]$Name,
@@ -59,9 +73,10 @@ function Invoke-NpmLogged {
 
     $Stamp = Get-Date -Format "yyyyMMdd-HHmmss"
     $LogPath = Join-Path $LogDir "frontend-$Name-$Stamp.log"
+    $NpmCommand = Get-NpmCommand
     $PreviousErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
-    & npm @Arguments *> $LogPath
+    & $NpmCommand @Arguments *> $LogPath
     $ExitCode = $LASTEXITCODE
     $ErrorActionPreference = $PreviousErrorActionPreference
 

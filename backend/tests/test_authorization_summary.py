@@ -107,7 +107,7 @@ def test_clear_aml_without_id_verification_reports_pending_and_blocks_kyc_capabi
     }
     assert summary["capabilities"] == {
         "can_transact": False,
-        "can_create_asset": True,
+        "can_create_asset": False,
         "can_fractionalize": False,
     }
 
@@ -137,6 +137,7 @@ def test_missing_verification_reports_not_started_and_reject_blocks_kyc_capabili
         "id_verified_at": None,
     }
     assert unstarted_summary["capabilities"]["can_transact"] is False
+    assert unstarted_summary["capabilities"]["can_create_asset"] is False
     assert unstarted_summary["capabilities"]["can_fractionalize"] is False
     assert rejected_summary["verification"] == {
         "kyc_status": "reject",

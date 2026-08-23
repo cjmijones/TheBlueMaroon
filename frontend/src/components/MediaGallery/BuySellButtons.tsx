@@ -1,28 +1,34 @@
-// ▒▒▒ components/BuySellButtons.tsx ▒▒▒
 import { useState } from "react";
 import Button from "../ui/button/Button";
-import CheckoutModal from "../CheckoutModal"; // to be implemented later
+import CheckoutModal from "../CheckoutModal";
 
 export default function BuySellButtons({ assetId }: { assetId: string }) {
   const [open, setOpen] = useState(false);
+
   return (
     <>
       <div className="flex gap-3">
         <Button size="md" className="w-full" onClick={() => setOpen(true)}>
-          Buy Shares
+          Purchase unavailable
         </Button>
         <Button
           variant="outline"
           size="md"
           className="w-full"
           disabled
-          aria-label="Secondary market coming soon"
+          aria-label="Selling requires live marketplace order routes"
         >
-          Sell
+          Sell unavailable
         </Button>
       </div>
 
-      {open && <CheckoutModal open={open} onOpenChange={setOpen} assetTitle={`Asset ${assetId}`} />}
+      {open && (
+        <CheckoutModal
+          open={open}
+          onOpenChange={setOpen}
+          assetTitle={`Asset ${assetId}`}
+        />
+      )}
     </>
   );
 }

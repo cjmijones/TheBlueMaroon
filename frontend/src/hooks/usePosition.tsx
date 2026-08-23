@@ -1,34 +1,29 @@
-/* --------------------------------------------------------------
-    hooks/usePosition.ts  (single position)
--------------------------------------------------------------- */
-import { useQuery } from "@tanstack/react-query";
-import { Position } from "./usePositions";
+import { mapCreatedAssetToPosition, Position } from "./usePositions";
+import { usePortfolio } from "./usePortfolio";
 
 export interface PricePoint {
   date: string;
   value: number;
 }
 
+export type PositionDetail = Position & {
+  history: PricePoint[];
+};
+
 export function usePosition(id: string) {
-  return useQuery<Position & { history: PricePoint[] }>({
-    queryKey: ["position", id],
-    queryFn: () =>
-      new Promise((r) =>
-        setTimeout(
-          () =>
-            r({
-              id,
-              title: id.replace(/-/g, " "),
-              shares: 42,
-              avgPrice: 130,
-              currentPrice: 135,
-              history: Array.from({ length: 12 }).map((_, i) => ({
-                date: `2025-${String(i + 1).padStart(2, "0")}-01`,
-                value: 120 + i * 2,
-              })),
-            }),
-          400,
-        ),
-      ),
-  });
+  const query = usePortfolio();
+  const asset = query.data?.created_assets.find(
+    (item) => item.id === id && item.lifecycle === "fractionalized_asset",
+  );
+  const position = asset
+    ? {
+        ...mapCreatedAssetToPosition(asset),
+        history: [],
+      }
+    : null;
+
+  return {
+    ...query,
+    data: position satisfies PositionDetail | null,
+  };
 }

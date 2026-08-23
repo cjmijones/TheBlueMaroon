@@ -34,3 +34,4 @@ deployments/
 broadcast/
 AGENT_TODO.md
 .agent/
+admin/dist/

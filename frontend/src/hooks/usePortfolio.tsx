@@ -41,6 +41,7 @@ export type CreatedAsset = {
   image_url?: string | null;
   nft_contract?: string | null;
   token_id?: string | null;
+  owner_wallet_address?: string | null;
   chain_id?: number | null;
   vault?: string | null;
   shares?: number | null;

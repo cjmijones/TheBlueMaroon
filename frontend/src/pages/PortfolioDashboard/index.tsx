@@ -1,11 +1,9 @@
-// src/pages/PortfolioDashboard/index.tsx
-import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { Link } from "react-router-dom";
 import { useAccount, useChainId } from "wagmi";
 import { CreatedAsset, usePortfolio } from "../../hooks/usePortfolio";
 import EmptyState from "../../components/ui/empty/EmptyState";
 import Button from "../../components/ui/button/Button";
-import LinkWalletButton from "../../components/wallet/LinkWalletButton";
+import Badge from "../../components/ui/badge/Badge";
 import { useChain } from "../../context/ChainContext";
 
 function formatEth(nativeWei?: string | null) {
@@ -25,7 +23,6 @@ export default function PortfolioDashboard() {
   const walletChainId = useChainId();
   const appDefaultChainId = useChain();
   const effectiveChainId = walletChainId ?? appDefaultChainId;
-  const { openConnectModal } = useConnectModal();
   const { data, isLoading, error } = usePortfolio(address, effectiveChainId);
 
   if (isLoading) {
@@ -50,7 +47,6 @@ export default function PortfolioDashboard() {
     data.wallets.find((wallet) => wallet.is_connected) ??
     data.wallets.find((wallet) => wallet.is_primary) ??
     data.wallets[0];
-  const connectedPortfolioWallet = data.wallets.find((wallet) => wallet.is_connected);
   const linkedWalletCount = data.wallets.filter((wallet) => wallet.is_linked).length;
   const totalSepoliaEth = data.wallets
     .filter((wallet) => wallet.chain_id === 11155111)
@@ -70,30 +66,22 @@ export default function PortfolioDashboard() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-                Wallet Control
+                Wallet Summary
               </h2>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Current wallet identity and balances.
+                Read-only wallet status and balance summary for the portfolio view.
               </p>
             </div>
-            {!isConnected ? (
-              <Button size="sm" onClick={() => openConnectModal?.()}>
-                Connect
-              </Button>
-            ) : connectedPortfolioWallet?.is_linked ? (
-              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
-                Linked
-              </span>
-            ) : (
-              <LinkWalletButton />
-            )}
+            <Badge size="sm" color={isConnected ? "success" : "warning"}>
+              {isConnected ? "Connected wallet detected" : "Wallet disconnected"}
+            </Badge>
           </div>
 
           <div className="mt-5 space-y-3">
             {data.wallets.length === 0 ? (
               <EmptyState
                 title="No wallets linked"
-                body="Connect and link a wallet before preparing assets for launch."
+                body="Wallet management now lives in the Web3 Dashboard."
               />
             ) : (
               data.wallets.map((wallet) => (
@@ -108,9 +96,15 @@ export default function PortfolioDashboard() {
                       </p>
                       <p className="mt-1 text-xs uppercase text-gray-500 dark:text-gray-400">
                         {wallet.chain_name}
-                        {wallet.is_connected ? " Connected" : ""}
-                        {wallet.is_primary ? " Primary" : ""}
-                        {!wallet.is_linked ? " Not linked" : ""}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {wallet.is_connected
+                          ? "This is the currently connected wallet."
+                          : wallet.is_primary
+                            ? "This is your primary linked wallet."
+                            : wallet.is_linked
+                              ? "This wallet is linked to your account."
+                              : "This wallet is available in your history."}
                       </p>
                     </div>
                     <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">
@@ -125,6 +119,14 @@ export default function PortfolioDashboard() {
                 </div>
               ))
             )}
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link to="/web3-commerce" className="inline-flex">
+              <Button size="sm" variant="outline">
+                Manage wallets
+              </Button>
+            </Link>
           </div>
         </section>
 

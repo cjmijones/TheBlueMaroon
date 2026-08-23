@@ -165,6 +165,14 @@ Return: changed files, concise verification summary, risks, next task
 - Verify: Webhook signature tests, session creation tests, or documented external-service blocker.
 - Return: Compliance gates, provider assumptions, failure/degraded behavior.
 
+### admin-portal-agent
+- Purpose: Operator-facing admin UI, backend admin routes, user/KYC/wallet inspection, role-management planning, and audit-first workflows.
+- Read first: `admin/`, `backend/app/api/routes_admin.py`, `backend/app/auth/admin.py`, `backend/app/auth/authorization.py`, user, wallet, role, verification, and audit models.
+- Allowed edits: `admin/`, `backend/app/api/routes_admin.py`, `backend/app/auth/admin.py`, focused admin tests, and admin portal docs.
+- Coordinates with: `backend-api-agent`, `frontend-data-agent`, `kyc-compliance-agent`, `wallet-auth-agent`, `qa-verification-agent`.
+- Verify: Focused backend admin tests and `cd admin; npm run build` when the admin app is touched.
+- Return: Admin capability boundaries, changed endpoints/UI, audit implications, verification evidence, and remaining privileged-operation risks.
+
 ### ops-observability-agent
 - Purpose: Docker, Compose, env boundaries, health/readiness, logging, metrics, and deployment shape.
 - Read first: `Dockerfile`, `backend/ops/docker-compose.yml`, `backend/prometheus.yml`, `USER_README.md`, env docs.
@@ -194,6 +202,7 @@ Return: changed files, concise verification summary, risks, next task
 - Portfolio live-data work: `backend-api-agent` + `frontend-data-agent` + `frontend-product-agent` + `qa-verification-agent`.
 - Fractionalization work: `web3-contracts-agent` + `backend-api-agent` + `frontend-data-agent` + `qa-verification-agent`.
 - Wallet auth work: `wallet-auth-agent` + `backend-api-agent` + `frontend-data-agent`.
+- Admin portal work: `admin-portal-agent` + `backend-api-agent` + `kyc-compliance-agent` + `wallet-auth-agent` + `qa-verification-agent`.
 - Marketplace/trading work: `marketplace-agent` + `web3-contracts-agent` + `backend-api-agent` + `frontend-product-agent`.
 - Production hardening: `ops-observability-agent` + `backend-api-agent` + `repo-steward` + `qa-verification-agent`.
 - Documentation cleanup: `repo-steward` + relevant domain role + `qa-verification-agent`.

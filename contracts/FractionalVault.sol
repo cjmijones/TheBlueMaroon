@@ -12,6 +12,8 @@ contract FractionalVault is ERC20 {
     bool    public initialized;
     address public nft;          // ERC-721 collection
     uint256 public tokenId;      // ID held by this vault
+    string private _vaultName;
+    string private _vaultSymbol;
 
     constructor() ERC20("", "") {}   // empty name & symbol – set later
 
@@ -37,9 +39,8 @@ contract FractionalVault is ERC20 {
 
         nft     = _nft;
         tokenId = _tokenId;
-
-        _setName(name_);
-        _setSymbol(symbol_);
+        _vaultName = name_;
+        _vaultSymbol = symbol_;
 
         // pull the NFT from its owner → vault
         IERC721(_nft).transferFrom(_owner, address(this), _tokenId);
@@ -48,12 +49,11 @@ contract FractionalVault is ERC20 {
         _mint(_owner, shares * 1e18);
     }
 
-    /* -------- internal helpers (save a storage slot via yul) --------------- */
-
-    function _setName(string memory name_) internal {
-        assembly { sstore(0x3, name_) }      // same slot OZ uses for name
+    function name() public view override returns (string memory) {
+        return _vaultName;
     }
-    function _setSymbol(string memory symbol_) internal {
-        assembly { sstore(0x4, symbol_) }    // same slot OZ uses for symbol
+
+    function symbol() public view override returns (string memory) {
+        return _vaultSymbol;
     }
 }

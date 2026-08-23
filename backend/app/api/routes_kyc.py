@@ -1,6 +1,8 @@
 # app/api/routes_kyc.py
 import json, hmac, hashlib, logging
 from datetime import datetime
+from time import time
+from typing import Any, Mapping
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +16,7 @@ from app.models.verification import UserVerification   # ensure this table exist
 settings = get_settings()
 router = APIRouter(prefix="/kyc", tags=["kyc"])
 log = logging.getLogger("kyc")
+SIGNATURE_WINDOW_SECONDS = 300
 
 
 def _redact_id(value: object) -> str:
@@ -42,6 +45,66 @@ def _parse_aml_score(value) -> int:
             return int(parsed)
 
     raise ValueError("Invalid AML risk score")
+
+
+def _header(headers: Mapping[str, str], name: str) -> str | None:
+    return headers.get(name) or headers.get(name.lower()) or headers.get(name.upper())
+
+
+def _shorten_floats(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: _shorten_floats(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_shorten_floats(item) for item in value]
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    return value
+
+
+def canonical_didit_payload(payload: dict[str, Any]) -> str:
+    return json.dumps(
+        _shorten_floats(payload),
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+
+
+def _fresh_timestamp(timestamp_header: str | None, now: int | None = None) -> bool:
+    if not timestamp_header:
+        return False
+    try:
+        timestamp = int(timestamp_header)
+    except (TypeError, ValueError):
+        return False
+    current = int(time() if now is None else now)
+    return abs(current - timestamp) <= SIGNATURE_WINDOW_SECONDS
+
+
+def _hmac_matches(signature: str | None, body: bytes, secret: str) -> bool:
+    if not signature or not secret:
+        return False
+    expected = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(signature, expected)
+
+
+def verify_didit_signature(
+    payload: dict[str, Any],
+    raw_body: bytes,
+    headers: Mapping[str, str],
+    secret: str,
+    now: int | None = None,
+) -> bool:
+    signature_v2 = _header(headers, "X-Signature-V2")
+    timestamp = _header(headers, "X-Timestamp")
+    if signature_v2:
+        if not _fresh_timestamp(timestamp, now=now):
+            return False
+        canonical = canonical_didit_payload(payload).encode("utf-8")
+        return _hmac_matches(signature_v2, canonical, secret)
+
+    raw_signature = _header(headers, "X-Signature") or _header(headers, "X-Didit-Signature")
+    return _hmac_matches(raw_signature, raw_body, secret)
 
 
 def apply_didit_session_update(
@@ -96,16 +159,19 @@ async def start_kyc(db: AsyncSession = Depends(get_db),
 @router.post("/webhook", include_in_schema=False)
 async def didit_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     raw = await request.body()
-    sig = request.headers.get("X-Didit-Signature", "")
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(400, "Invalid webhook payload") from exc
 
-    computed = hmac.new(
-        settings.didit_webhook_secret.encode(), raw, hashlib.sha256
-    ).hexdigest()
+    if not verify_didit_signature(
+        payload=payload,
+        raw_body=raw,
+        headers=request.headers,
+        secret=settings.didit_webhook_secret,
+    ):
+        raise HTTPException(401, "Invalid signature")
 
-    if not hmac.compare_digest(sig, computed):
-        raise HTTPException(400, "Invalid signature")
-
-    payload = json.loads(raw)
     session = payload["session"]
     user_id = str(session["metadata"]["user_id"])
 

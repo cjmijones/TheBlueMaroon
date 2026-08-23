@@ -1,8 +1,21 @@
-// src/hooks/useSellQuote.ts
 import { useQuery } from "@tanstack/react-query";
+
+export interface SellQuoteState {
+  eth: null;
+  usd: null;
+  isAvailable: false;
+  reason: string;
+}
+
 export function useSellQuote(assetId: string, qty: number) {
-  return useQuery({
-    queryKey: ["sellQuote", assetId, qty],
-    queryFn: () => new Promise<{ eth: number; usd: number }>(res=> setTimeout(()=> res({ eth: qty * 0.01, usd: qty*32 }), 500)),
+  return useQuery<SellQuoteState>({
+    queryKey: ["sellQuote", assetId, qty, "unavailable"],
+    queryFn: async () => ({
+      eth: null,
+      usd: null,
+      isAvailable: false,
+      reason: "Sell quotes are not live until marketplace pricing and settlement are implemented.",
+    }),
+    staleTime: Infinity,
   });
 }

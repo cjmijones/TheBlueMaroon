@@ -59,7 +59,7 @@ def build_current_user_summary(user: Any) -> dict[str, Any]:
         },
         "capabilities": {
             "can_transact": has_linked_wallet and is_kyc_verified,
-            "can_create_asset": has_linked_wallet and is_creator,
+            "can_create_asset": has_linked_wallet and is_creator and is_kyc_verified,
             "can_fractionalize": has_linked_wallet and is_creator and is_kyc_verified,
         },
         "created_at": _iso(getattr(user, "created_at", None)),

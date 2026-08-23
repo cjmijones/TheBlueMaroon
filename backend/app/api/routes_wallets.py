@@ -2,8 +2,9 @@
 import os
 import json
 import re
+import string
 from datetime import datetime, timezone, timedelta
-from secrets import token_urlsafe
+from secrets import choice
 from urllib.parse import urlparse
 import logging
 
@@ -107,6 +108,11 @@ def _redact_address(address: str | None) -> str:
 NONCE_TTL = 300            # 5 minutes
 NONCE_KEY = "siwe:{uid}:nonce"
 
+def _generate_siwe_nonce() -> str:
+    alphabet = string.ascii_letters + string.digits
+    return "".join(choice(alphabet) for _ in range(24))
+
+
 async def _take_nonce(redis: Redis, user_id: str) -> str:
     """
     Atomically fetch **and delete** the nonce for this user (Redis GETDEL).
@@ -176,7 +182,7 @@ async def issue_nonce(
     redis: Annotated[Redis, Depends(get_redis)],
 ):
     key   = NONCE_KEY.format(uid=user.id)
-    nonce = token_urlsafe(16)
+    nonce = _generate_siwe_nonce()
     was_set = await redis.set(key, nonce, ex=NONCE_TTL, nx=True)
     if not was_set:                       # reuse still-valid one
         nonce = (await redis.get(key)).decode()

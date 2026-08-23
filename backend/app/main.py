@@ -1,48 +1,42 @@
-from pathlib import Path
 from contextlib import asynccontextmanager
+from pathlib import Path
 
-from fastapi import FastAPI, APIRouter, Request, HTTPException
+from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from app.api.routes_health import router as health_router
-from app.api.routes_auth import router as auth_router
-from app.api.routes_username import router as user_router
-from app.api.routes_wallets import router as wallet_router
-from app.api.routes_kyc import router as kyc_router
-from app.api.routes_fractional import router as fractional_router
-from app.api.routes_nfts import router as nfts_router
+from app.api.routes_admin import router as admin_router
 from app.api.routes_assets import router as assets_router
+from app.api.routes_auth import router as auth_router
+from app.api.routes_fractional import router as fractional_router
+from app.api.routes_health import router as health_router
+from app.api.routes_kyc import router as kyc_router
+from app.api.routes_nfts import router as nfts_router
 from app.api.routes_portfolio import router as portfolio_router
 from app.api.routes_transactions import router as transactions_router
-
+from app.api.routes_username import router as user_router
+from app.api.routes_wallets import router as wallet_router
 from app.core.config import get_settings
 from app.core.logging_config import setup_logging
 
-# ────────────────────────────────
-# Early init
-# ────────────────────────────────
 settings = get_settings()
 setup_logging()
 
 instr = Instrumentator()
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    instr.expose(app)       # /metrics
+    instr.expose(app)
     yield
 
-app = FastAPI(
-    title="Blue-Maroon API",
-    lifespan=lifespan
-)
+
+app = FastAPI(title="Blue-Maroon API", lifespan=lifespan)
 instr.instrument(app)
 
-# ────────────────────────────────
-# Security / CORS
-# ────────────────────────────────
+
 @app.middleware("http")
 async def validate_host(request: Request, call_next):
     host = request.headers.get("host", "").split(":")[0]
@@ -50,13 +44,16 @@ async def validate_host(request: Request, call_next):
         return await call_next(request)
     raise HTTPException(status_code=400, detail="Invalid host header")
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",   # vite dev server
+        "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
         "http://0.0.0.0:8000/",
-        "http://localhost:8000",   # container / prod
+        "http://localhost:8000",
         "https://fair-forcibly-kodiak.ngrok-free.app",
         "https://fair-forcibly-kodiak.ngrok-free.app/",
     ],
@@ -65,10 +62,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# ────────────────────────────────
-# API routers live under /api/*
-# ────────────────────────────────
 api_router = APIRouter(prefix="/api")
 api_router.include_router(auth_router)
 api_router.include_router(health_router)
@@ -80,40 +73,40 @@ api_router.include_router(nfts_router)
 api_router.include_router(assets_router)
 api_router.include_router(portfolio_router)
 api_router.include_router(transactions_router)
+api_router.include_router(admin_router)
 
 app.include_router(api_router)
 
-# ────────────────────────────────
-# React static assets  (/assets/*.js, css, svg…)
-# ────────────────────────────────
+MEDIA_DIR = Path(settings.media_root)
+app.mount("/media", StaticFiles(directory=MEDIA_DIR, check_dir=False), name="media")
+
 SPA_DIR = Path(__file__).parent.parent / "frontend" / "dist"
 ASSET_DIR = SPA_DIR / "assets"
 SPA_INDEX = SPA_DIR / "index.html"
 SPA_AVAILABLE = SPA_INDEX.exists() and ASSET_DIR.exists()
 
-# 1) serve real static files
 if SPA_AVAILABLE:
     app.mount("/assets", StaticFiles(directory=ASSET_DIR), name="assets")
 
-# 2) root path -> index.html
+
 @app.get("/", include_in_schema=False)
 async def spa_root():
     if SPA_AVAILABLE:
         return FileResponse(SPA_INDEX)
     return {"status": "api_only", "docs": "/docs", "health": "/api/health"}
 
-# 3) catch-all (everything that is NOT /api/* or /assets/*)
+
 @app.get("/{full_path:path}", include_in_schema=False)
 @app.head("/{full_path:path}", include_in_schema=False)
 async def spa_fallback(full_path: str, request: Request):
-    # Let API routes error normally if someone mis-routes
     if full_path.startswith("api"):
         raise HTTPException(status_code=404)
     if not SPA_AVAILABLE:
         raise HTTPException(status_code=404)
     return FileResponse(SPA_INDEX)
 
-# local dev entry-point
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

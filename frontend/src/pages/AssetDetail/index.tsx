@@ -1,17 +1,15 @@
-// ▒▒▒ pages/AssetDetail/index.tsx ▒▒▒
-import { useParams, Link } from "react-router-dom";
-import { useAsset } from "../../hooks/useAsset";
-import MediaGallery from "../../components/MediaGallery/MediaGallery";
-import KeyMetrics from "../../components/MediaGallery/KeyMetrics";
-import DetailTabs from "../../components/MediaGallery/DetailTabs";
-import BuySellButtons from "../../components/MediaGallery/BuySellButtons";
+import { Link, useParams } from "react-router-dom";
 import { ChevronLeftIcon } from "../../icons";
+import EmptyState from "../../components/ui/empty/EmptyState";
+import { useAsset } from "../../hooks/useAsset";
 
 export default function AssetDetail() {
   const { id } = useParams();
-  const { data, isLoading } = useAsset(id as string);
+  const { data, isLoading } = useAsset(id ?? "");
 
-  if (!id) return <div className="p-6">Invalid asset id</div>;
+  if (!id) {
+    return <EmptyState title="Invalid asset id" body="Return to Explore and choose an asset." />;
+  }
 
   return (
     <div className="space-y-6 p-6 sm:p-8">
@@ -22,35 +20,16 @@ export default function AssetDetail() {
         <ChevronLeftIcon className="size-4" /> Back to Explore
       </Link>
 
-      {/* graceful loader */}
       {isLoading ? (
-        <div className="grid animate-pulse gap-6 lg:grid-cols-2">
-          <div className="aspect-square rounded-2xl bg-gray-100 dark:bg-gray-800" />
-          <div className="space-y-4">
-            <div className="h-8 w-2/3 rounded bg-gray-100 dark:bg-gray-800" />
-            <div className="h-4 w-1/2 rounded bg-gray-100 dark:bg-gray-800" />
-            <div className="h-4 w-1/3 rounded bg-gray-100 dark:bg-gray-800" />
-          </div>
-        </div>
+        <div className="h-72 animate-pulse rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-800" />
       ) : (
-        data && (
-          <>
-            <div className="grid gap-6 lg:grid-cols-2">
-              <MediaGallery images={data.images} />
-              <div className="space-y-6">
-                <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                  {data.title}
-                </h1>
-
-                <KeyMetrics asset={data} />
-
-                <BuySellButtons assetId={data.id} />
-              </div>
-            </div>
-
-            <DetailTabs asset={data} />
-          </>
-        )
+        <EmptyState
+          title="Marketplace asset unavailable"
+          body={
+            data?.reason ??
+            "Live asset details will appear after listing routes are connected."
+          }
+        />
       )}
     </div>
   );
