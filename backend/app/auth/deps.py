@@ -1,6 +1,5 @@
 # app/auth/deps.py
-import json, time, asyncio, httpx
-from functools import lru_cache
+import time, asyncio, httpx
 from urllib.parse import urljoin
 from jose import jwt
 from fastapi import Depends, HTTPException, status
@@ -27,7 +26,6 @@ bearer_scheme = HTTPBearer()
 JWKS_URL = urljoin(f"https://{AUTH0_DOMAIN}", "/.well-known/jwks.json")
 
 
-@lru_cache(maxsize=1)
 def _jwks():
     """Fetch & cache Auth0's public keys (5-min TTL)."""
     ttl_key = "_fetched_at"
@@ -58,7 +56,6 @@ async def get_current_user(
 ) -> User:
     try:
         payload = _decode_token(creds.credentials)
-        print("🔐 JWT payload:", json.dumps(payload, indent=2))
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Invalid or expired token") from exc
