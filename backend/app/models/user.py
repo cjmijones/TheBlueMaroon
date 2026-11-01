@@ -10,7 +10,7 @@ class User(Base):
     __tablename__ = "users"
 
     # ─── columns ───────────────────────────────────────────────────────
-    id          = Column(String, primary_key=True)      # Auth0 sub
+    id          = Column(String, primary_key=True)      # Supabase auth user id
     email       = Column(String, unique=True, index=True)
     name        = Column(String)
     picture     = Column(String)
@@ -28,6 +28,12 @@ class User(Base):
 
     fractional_listings = relationship(             # many-to-one
         "FractionalListing",
+        back_populates="creator",
+        cascade="all, delete-orphan",
+    )
+
+    app_assets = relationship(
+        "AppAsset",
         back_populates="creator",
         cascade="all, delete-orphan",
     )

@@ -1,8 +1,21 @@
-// src/hooks/useWithdrawable.ts
 import { useQuery } from "@tanstack/react-query";
+
+export interface WithdrawableState {
+  eth: null;
+  usd: null;
+  isAvailable: false;
+  reason: string;
+}
+
 export function useWithdrawable() {
-  return useQuery({
-    queryKey: ["withdrawable"],
-    queryFn: () => new Promise<{ eth: number; usd: number }>(res=> setTimeout(()=> res({ eth: 0.1234, usd: 390 }), 500)),
+  return useQuery<WithdrawableState>({
+    queryKey: ["withdrawable", "unavailable"],
+    queryFn: async () => ({
+      eth: null,
+      usd: null,
+      isAvailable: false,
+      reason: "Withdrawable balances are not connected to a live settlement source yet.",
+    }),
+    staleTime: Infinity,
   });
 }

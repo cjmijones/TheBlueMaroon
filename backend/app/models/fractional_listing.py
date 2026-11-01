@@ -67,6 +67,8 @@ class FractionalListing(Base):
     # economics
     shares      = Column(Integer, nullable=False)
     round_price = Column(Numeric(18, 8), nullable=True)
+    status      = Column(String, default="draft", nullable=False)
+    tx_hash     = Column(String(66), nullable=True)
 
     # ---- FK to users table (← reverted field name) -----------------
     creator_id = Column(
@@ -85,6 +87,12 @@ class FractionalListing(Base):
     expires_at = Column(
         DateTime(timezone=True),
         server_default=sa.text("now() + '7 days'::interval"),
+        nullable=False,
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
         nullable=False,
     )
 

@@ -5,6 +5,7 @@ import { ScrollToTop } from "./components/common/ScrollToTop";
 import { ChainContext } from './context/ChainContext.tsx';
 
 import PrivateAppLayout from "./layout/PrivateAppLayout";
+import AuthCallback from "./components/auth/AuthCallback";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import LandingHome from "./pages/Home/index.tsx";
 import TailwindHome from "./pages/Dashboard/TailwindHome.tsx";
@@ -40,6 +41,7 @@ export default function App() {
           <Routes>
             {/* Public route */}
             <Route path="/" element={<OAuthSignInPage />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
 
             {/* Test Protected Route outside of Private App Layout - may be deprecated */}
             <Route

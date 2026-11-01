@@ -15,9 +15,11 @@ from .order import Order
 from .transactions import Transaction
 from .verification import UserVerification
 from .fractional_listing import FractionalListing
+from .app_asset import AppAsset
 
 __all__ = [
     "Base","User","Wallet","Transaction","Address","SocialLink",
     "Role","UserRole","NFT","UserNFT","Listing","Order",
     "Notification","AuditEvent", "UserVerification", "FractionalListing",
+    "AppAsset",
 ]

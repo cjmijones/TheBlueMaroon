@@ -32,3 +32,6 @@ Thumbs.db
 # ✅ Hardhat-specific config outputs
 deployments/
 broadcast/
+AGENT_TODO.md
+.agent/
+admin/dist/

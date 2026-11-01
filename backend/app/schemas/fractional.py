@@ -11,6 +11,14 @@ class FractionalCreate(BaseModel):
     shares:     int   = Field(..., gt=0)
     chain_id:   int   = 11155111          # default → Sepolia
     round_price: float | None = None      # optional fixed-price round
+    creator_wallet_address: str = Field(
+        ...,
+        pattern=r"^0x[a-fA-F0-9]{40}$",
+    )
+    predicted_vault: str = Field(
+        ...,
+        pattern=r"^0x[a-fA-F0-9]{40}$",
+    )
 
     model_config = {"from_attributes": True}   # formerly orm_mode
 

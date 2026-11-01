@@ -6,14 +6,16 @@ export default function ListingCard({ listing }: { listing: Listing }) {
   return (
     <Link
       to={`/asset/${listing.id}`}
-      className="group block rounded-2xl border border-gray-200 bg-white shadow-sm transition-transform hover:-translate-y-px hover:shadow-md dark:border-gray-800 dark:bg-white/[0.03]"
+      className="group block rounded-lg border border-gray-200 bg-white shadow-sm transition-transform hover:-translate-y-px hover:shadow-md dark:border-gray-800 dark:bg-white/[0.03]"
     >
-      <div className="aspect-[4/3] overflow-hidden rounded-t-2xl">
-        <img
-          src={listing.image_url ?? "/images/mock/placeholder.jpg"}
-          alt={listing.title}
-          className="h-full w-full object-cover transition-transform group-hover:scale-105"
-        />
+      <div className="aspect-[4/3] overflow-hidden rounded-t-lg bg-gray-100 dark:bg-gray-800">
+        {listing.image_url && (
+          <img
+            src={listing.image_url}
+            alt={listing.title}
+            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+          />
+        )}
       </div>
 
       <div className="p-4 space-y-1">

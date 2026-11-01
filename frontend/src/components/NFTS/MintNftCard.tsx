@@ -1,17 +1,31 @@
 // components/cards/MintNftCard.tsx
-import { useState }   from "react";
+import { useState } from "react";
+
 import { useMintNft } from "../../hooks/useMintNft";
-import Button         from "../ui/button/Button";
+import Button from "../ui/button/Button";
 import InputField from "../form/input/InputField";
 import FileInput from "../form/input/FileInput";
+import { normalizeMintError, validateMintImage } from "./mintValidation";
 
 export default function MintNftCard() {
-  const { mutateAsync, isPending, isReady, errorMsg } = useMintNft();
+  const { mutateAsync, isPending, isReady, error, errorMsg, stageLabel, walletControl } =
+    useMintNft();
   const [file, setFile] = useState<File>();
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+
+  const fileError = submitAttempted ? validateMintImage(file) : null;
+  const mutationError = error ? normalizeMintError(error) : null;
+  const canSubmit = isReady && !isPending && !fileError && Boolean(file);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return;
+    setSubmitAttempted(true);
+
+    const validationError = validateMintImage(file);
+    if (validationError || !file) {
+      return;
+    }
+
     const fd = new FormData(e.currentTarget as HTMLFormElement);
     fd.append("image", file);
     await mutateAsync(fd);
@@ -30,7 +44,13 @@ export default function MintNftCard() {
         {/* inline warning when chain/env not ready */}
         {!isReady && (
           <p className="rounded-lg bg-yellow-50 p-3 text-sm text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200">
-            {errorMsg}
+            {walletControl.status === "linked_ready" ? errorMsg : walletControl.message}
+          </p>
+        )}
+
+        {mutationError && (
+          <p className="rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/40 dark:text-red-200">
+            {mutationError}
           </p>
         )}
 
@@ -57,7 +77,7 @@ export default function MintNftCard() {
           {/* image file picker (spans both columns) */}
           <FileInput
             name="image"
-            accept="image/*"
+            accept="image/png,image/jpeg,image/webp,image/gif"
             required
             onChange={(e) => setFile(e.target.files?.[0])}
             disabled={!isReady || isPending}
@@ -65,13 +85,19 @@ export default function MintNftCard() {
           />
         </div>
 
+        {fileError && (
+          <p className="rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/40 dark:text-red-200">
+            {fileError}
+          </p>
+        )}
+
         {/* submit */}
         <Button
           type="submit"
-          disabled={!isReady || isPending}
+          disabled={!canSubmit}
           className="w-full sm:w-auto"
         >
-          {isPending ? "Minting…" : "Mint NFT"}
+          {isPending ? stageLabel : "Mint NFT"}
         </Button>
       </form>
     </div>

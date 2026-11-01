@@ -24,8 +24,13 @@ target_metadata = Base.metadata
 
 print(f"This should be the target metadata: {target_metadata.tables.keys()}")
 
-# Get DB URL from env
-SYNC_DATABASE_URL = os.getenv("SYNC_DATABASE_URL")
+# Get DB URL from env. Compose sets MIGRATION_DATABASE_URL so migrations run
+# against the local Postgres service even when SYNC_DATABASE_URL points remote.
+SYNC_DATABASE_URL = (
+    os.getenv("MIGRATION_DATABASE_URL")
+    or os.getenv("SYNC_DATABASE_URL")
+    or (os.getenv("DATABASE_URL") or "").replace("postgresql+asyncpg://", "postgresql://")
+)
 
 def run_migrations_offline():
     """Run migrations without DB connection (not recommended for async)."""

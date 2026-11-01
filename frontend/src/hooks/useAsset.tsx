@@ -1,4 +1,3 @@
-// ▒▒▒ hooks/useAsset.ts ▒▒▒
 import { useQuery } from "@tanstack/react-query";
 
 export interface Asset {
@@ -13,29 +12,19 @@ export interface Asset {
   recentActivity: { tx: string; date: string; amount: number }[];
 }
 
-const MOCK_ASSET: Asset = {
-  id: "monet-haystacks",
-  title: "Claude Monet • Haystacks, 1890",
-  images: ["/images/mock/monet.jpg"],
-  price_per_share: 135,
-  total_shares: 10000,
-  shares_sold: 8470,
-  description:
-    "An iconic Impressionist masterpiece, stored in climate‑controlled vaults.",
-  documents: [
-    { name: "Appraisal Report", url: "/docs/appraisal.pdf" },
-    { name: "Insurance Certificate", url: "/docs/insurance.pdf" },
-  ],
-  recentActivity: [
-    { tx: "Buy", date: "2025-07-05", amount: 1500 },
-    { tx: "Buy", date: "2025-07-04", amount: 750 },
-  ],
-};
+export interface AssetUnavailable {
+  asset: null;
+  reason: string;
+}
 
 export function useAsset(id: string) {
-  return useQuery<Asset>({
-    queryKey: ["asset", id],
-    queryFn: () =>
-      new Promise((res) => setTimeout(() => res(MOCK_ASSET), 400)),
+  return useQuery<AssetUnavailable>({
+    queryKey: ["asset", id, "unavailable"],
+    queryFn: async () => ({
+      asset: null,
+      reason:
+        "Marketplace asset details are hidden until live asset listing routes are implemented.",
+    }),
+    staleTime: Infinity,
   });
 }

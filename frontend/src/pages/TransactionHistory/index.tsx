@@ -19,10 +19,10 @@ export default function TransactionHistory() {
             <thead className="border-b border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400">
               <tr>
                 <th className="py-2 pr-4">Date</th>
-                <th className="py-2 px-4">Type</th>
-                <th className="py-2 px-4">Asset</th>
-                <th className="py-2 px-4">Shares</th>
-                <th className="py-2 px-4">Price</th>
+                <th className="py-2 px-4">Method</th>
+                <th className="py-2 px-4">Status</th>
+                <th className="py-2 px-4">Chain</th>
+                <th className="py-2 px-4">Tx</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -33,12 +33,16 @@ export default function TransactionHistory() {
                     </tr>
                   ))
                 : data?.map((t) => (
-                    <tr key={t.id}>
-                      <td className="py-3 pr-4">{t.date}</td>
-                      <td className="py-3 px-4">{t.type}</td>
-                      <td className="py-3 px-4">{t.asset}</td>
-                      <td className="py-3 px-4">{t.shares}</td>
-                      <td className="py-3 px-4">${t.price}</td>
+                    <tr key={t.hash}>
+                      <td className="py-3 pr-4">
+                        {t.date ? new Date(t.date).toLocaleString() : ""}
+                      </td>
+                      <td className="py-3 px-4">{t.method}</td>
+                      <td className="py-3 px-4">{t.status}</td>
+                      <td className="py-3 px-4">{t.chainId}</td>
+                      <td className="py-3 px-4 font-mono">
+                        {t.hash.slice(0, 10)}...{t.hash.slice(-6)}
+                      </td>
                     </tr>
                   ))}
             </tbody>

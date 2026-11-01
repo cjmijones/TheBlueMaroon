@@ -2,13 +2,13 @@
 import os
 import json
 import re
+import string
 from datetime import datetime, timezone, timedelta
-from secrets import token_urlsafe
+from secrets import choice
 from urllib.parse import urlparse
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy.orm import Session
 from redis.asyncio import Redis
 
 from typing import Annotated 
@@ -36,14 +36,31 @@ router = APIRouter(prefix="/wallets", tags=["wallets"])
 # Constants
 # ──────────────────────────────────────────────────────────────────────────────
 
-raw_chains = os.getenv("AUTH0_ALLOWED_CHAINS", "[1]")
+raw_chains = os.getenv("SIWE_ALLOWED_CHAINS", "[11155111, 1]")
+
+
+def _parse_allowed_chains(raw: str) -> list[int]:
+    cleaned = raw.split("#", 1)[0].strip()
+    try:
+        parsed = json.loads(cleaned)
+    except json.JSONDecodeError:
+        # Be lenient with common env mistakes such as "{1, 137, 11155111}".
+        parts = [
+            part.strip()
+            for part in cleaned.strip("{}[]()").split(",")
+            if part.strip()
+        ]
+        parsed = [int(part) for part in parts]
+
+    if not isinstance(parsed, list) or not all(isinstance(c, int) for c in parsed):
+        raise ValueError("SIWE_ALLOWED_CHAINS must be a list of integer chain IDs")
+    return parsed
+
 
 try:
-    ALLOWED_CHAINS = json.loads(raw_chains)
-    if not isinstance(ALLOWED_CHAINS, list) or not all(isinstance(c, int) for c in ALLOWED_CHAINS):
-        raise ValueError("AUTH0_ALLOWED_CHAINS must be a JSON array of integers")
-except json.JSONDecodeError as e:
-    raise ValueError(f"Invalid JSON in AUTH0_ALLOWED_CHAINS: {raw_chains}") from e
+    ALLOWED_CHAINS = _parse_allowed_chains(raw_chains)
+except (TypeError, ValueError) as e:
+    raise ValueError(f"Invalid SIWE_ALLOWED_CHAINS: {raw_chains}") from e
 
 
 SIWE_TTL = timedelta(minutes=5)
@@ -65,12 +82,36 @@ def _to_datetime(value) -> datetime:
     return getattr(value, "_datetime", value)  
 
 
+def _redact_nonce(value) -> str:
+    if value is None:
+        return "missing"
+    if isinstance(value, bytes):
+        value = value.decode(errors="replace")
+    value = str(value)
+    if len(value) <= 8:
+        return "present"
+    return f"{value[:4]}...{value[-4:]}"
+
+
+def _redact_address(address: str | None) -> str:
+    if not address:
+        return "<missing>"
+    if len(address) <= 10:
+        return "<redacted>"
+    return f"{address[:6]}...{address[-4:]}"
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Nonce
 # ──────────────────────────────────────────────────────────────────────────────
 
 NONCE_TTL = 300            # 5 minutes
 NONCE_KEY = "siwe:{uid}:nonce"
+
+def _generate_siwe_nonce() -> str:
+    alphabet = string.ascii_letters + string.digits
+    return "".join(choice(alphabet) for _ in range(24))
+
 
 async def _take_nonce(redis: Redis, user_id: str) -> str:
     """
@@ -79,7 +120,7 @@ async def _take_nonce(redis: Redis, user_id: str) -> str:
     """
     key   = NONCE_KEY.format(uid=user_id)
     nonce = await redis.getdel(key)                # bytes | None
-    logger.debug("🟦 _take_nonce key=%s nonce=%s", key, nonce)
+    logger.debug("siwe nonce take key=%s nonce=%s", key, _redact_nonce(nonce))
     if not nonce:
         raise HTTPException(400, "Nonce not found or expired")
     return nonce.decode()
@@ -89,15 +130,23 @@ async def _take_nonce(redis: Redis, user_id: str) -> str:
 # ──────────────────────────────────────────────────────────────────────────────
 
 def verify_siwe(payload: WalletCreate, expected_domain: str, expected_nonce: str) -> SiweMessage:
-    print("🔍 Raw SIWE message:\n", payload.message)
     logger.debug(
-        "🔍 verify_siwe   redis-nonce=%s   payload.nonce=%s   domain=%s",
-        expected_nonce, payload.nonce, expected_domain
+        "verify_siwe start expected_nonce=%s payload_nonce=%s domain=%s message_present=%s signature_present=%s",
+        _redact_nonce(expected_nonce),
+        _redact_nonce(payload.nonce),
+        expected_domain,
+        bool(payload.message),
+        bool(payload.signature),
     )
     try:
         msg = SiweMessage.from_message(payload.message)
-        logger.debug("📝  Parsed SIWE: nonce=%s  domain=%s  address=%s  chain=%s",
-                     msg.nonce, msg.domain, msg.address, msg.chain_id)
+        logger.debug(
+            "siwe parsed nonce=%s domain=%s address=%s chain=%s",
+            _redact_nonce(msg.nonce),
+            msg.domain,
+            _redact_address(msg.address),
+            msg.chain_id,
+        )
         msg.verify(
             signature=payload.signature,
             domain=expected_domain,
@@ -111,12 +160,10 @@ def verify_siwe(payload: WalletCreate, expected_domain: str, expected_nonce: str
 
         issued_at = _to_datetime(msg.issued_at)
         if datetime.now(timezone.utc) - issued_at > SIWE_TTL:
-            print("Raising a value error for message is too old")
             raise ValueError("message too old")
         
 
         if msg.address.lower() != payload.address.lower():
-            print("Raising a value error for address mismatch")
             raise ValueError("address mismatch")
 
         return msg
@@ -135,11 +182,11 @@ async def issue_nonce(
     redis: Annotated[Redis, Depends(get_redis)],
 ):
     key   = NONCE_KEY.format(uid=user.id)
-    nonce = token_urlsafe(16)
+    nonce = _generate_siwe_nonce()
     was_set = await redis.set(key, nonce, ex=NONCE_TTL, nx=True)
     if not was_set:                       # reuse still-valid one
         nonce = (await redis.get(key)).decode()
-    logger.debug("🟢 issue_nonce key=%s  nonce=%s", key, nonce)
+    logger.debug("siwe nonce issue key=%s nonce=%s reused=%s", key, _redact_nonce(nonce), not was_set)
     return {"nonce": nonce}
 
 
@@ -150,7 +197,8 @@ async def issue_nonce(
 
 @router.get("/", response_model=list[WalletRead])
 async def my_wallets(
-    db: Session = Depends(get_db), user=Depends(get_current_user)
+    db: Annotated[AsyncSession, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
 ):
     return await crud.list_wallets(db, user.id)
 
@@ -175,7 +223,7 @@ async def link_wallet(
 
     # 4️⃣ insert wallet
     wallet = await crud.add_wallet(db, user.id, payload)
-    logger.debug("✅ Wallet linked user=%s addr=%s", user.id, wallet.address)
+    logger.debug("Wallet linked user=%s addr=%s", user.id, _redact_address(wallet.address))
     return wallet
 
 
@@ -197,9 +245,11 @@ async def wallet_balances(address: str,
 
 @router.delete("/{address}", status_code=status.HTTP_204_NO_CONTENT)
 async def unlink_wallet(
-    address: str, db: Session = Depends(get_db), user=Depends(get_current_user)
+    address: str,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
 ):
     try:
-        crud.remove_wallet(db, user.id, address)
+        await crud.remove_wallet(db, user.id, address)
     except ValueError as e:
         raise HTTPException(404, str(e))

@@ -5,8 +5,8 @@ import { Txn } from "../../hooks/useTransactions";
 
 export default function CsvExportButton({ data }: { data: Txn[] }) {
   function handleExport() {
-    const header = "id,date,type,asset,shares,price\n";
-    const rows = data.map((t) => `${t.id},${t.date},${t.type},${t.asset},${t.shares},${t.price}`).join("\n");
+    const header = "hash,date,method,status,chainId,wallet\n";
+    const rows = data.map((t) => `${t.hash},${t.date},${t.method},${t.status},${t.chainId},${t.wallet ?? ""}`).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
